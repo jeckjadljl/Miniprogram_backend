@@ -1,0 +1,54 @@
+{
+  "name": "Mini_program_backend",
+  "version": "1.0.0",
+  "description": "mini program",
+  "private": true,
+  "egg": {
+    "declarations": true
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "egg": "^3.17.5",
+    "egg-jwt": "^3.1.7",
+    "egg-mysql": "^4.0.0",
+    "egg-redis": "^2.6.0",
+    "egg-scripts": "2",
+    "egg-sequelize": "^6.0.0",
+    "egg-socket.io": "^4.1.6",
+    "egg-validate": "^2.0.2",
+    "fecha": "^4.2.3",
+    "lodash": "^4.17.21",
+    "md5": "^2.3.0",
+    "mysql2": "^3.11.3",
+    "uuid": "^11.0.2"
+  },
+  "devDependencies": {
+    "egg-bin": "6",
+    "egg-mock": "5",
+    "eslint": "8",
+    "eslint-config-egg": "13",
+    "factory-girl": "^5.0.4",
+    "mocha": "^10.7.3",
+    "sequelize-cli": "^6.6.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "egg-scripts start --daemon --title=egg-server-Mini_program_backend",
+    "stop": "egg-scripts stop --title=egg-server-Mini_program_backend",
+    "dev": "egg-bin dev",
+    "test": "npm run lint -- --fix && npm run test:local",
+    "test:local": "mocha --exit",
+    "cov": "egg-bin cov",
+    "lint": "eslint .",
+    "ci": "eslint . && NODE_ENV=test npx sequelize db:migrate && egg-bin cov"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "caohanzhong",
+  "license": "MIT"
+}

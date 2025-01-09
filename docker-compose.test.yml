@@ -1,0 +1,56 @@
+services:
+  # Node.js 应用服务
+  miniprogramsever:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${NODEJS_PORT:-7001}:7001"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - backend_network
+    environment:
+      NODEJS_PORT: ${NODEJS_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_UNITEST}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      WX_APPID: ${WX_APPID}
+      WX_APPSECRET: ${WX_APPSECRET}
+    command: >
+      sh -c "npx sequelize-cli db:migrate --name 20241107073749-init-all-tables.js --env test && npm run dev"
+
+  # MongoDB 服务
+  mysql:
+    image: mysql
+    ports:
+      - "${MYSQL_DOCKER_PORT:-3307}:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE_UNITEST}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      backend_network:
+        ipv4_address: 172.22.0.2
+
+  # Redis 服务
+  redis:
+    image: redis
+    ports:
+      - "${REDIS_DOCKER_PORT:-6380}:6379"
+    networks:
+      backend_network:
+        ipv4_address: 172.22.0.3
+
+networks:
+  backend_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1

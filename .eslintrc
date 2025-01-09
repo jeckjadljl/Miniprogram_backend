@@ -1,0 +1,8 @@
+{
+  "extends": "eslint-config-egg",
+  "root": true,
+  "rules": {
+    // 强制使用双引号
+    "quotes": ["warn", "double"]
+  }
+}

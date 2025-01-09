@@ -1,0 +1,16 @@
+{
+  "development": {
+    "username": "root",
+    "password": "chz123",
+    "database": "membership_manager_db",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": "chz123",
+    "database": "membership_manager_db_test",
+    "host": "mysql",
+    "dialect": "mysql"
+  }
+}

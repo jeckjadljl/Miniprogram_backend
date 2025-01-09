@@ -1,0 +1,72 @@
+/*
+ * @Author: caohanzhong 342292451@qq.com
+ * @Date: 2024-11-12 21:44:14
+ * @LastEditors: caohanzhong 342292451@qq.com
+ * @LastEditTime: 2024-12-24 12:04:26
+ * @FilePath: \Mini_program_backend\app\schema\goods.js
+ * @Description:
+ *
+ * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
+ */
+module.exports = app => {
+  const { STRING, DECIMAL, UUIDV4, DATE, BIGINT, ENUM, TEXT } = app.Sequelize;
+
+  return {
+    goods_id: {
+      type: STRING(38),
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: UUIDV4,
+    },
+    lastModifiedTime: {
+      type: DATE,
+      allowNull: false,
+    },
+    lastModifierName: {
+      type: STRING(76),
+      allowNull: false,
+    },
+    lastModifierId: {
+      type: STRING(38),
+      allowNull: false,
+    },
+    createdTime: {
+      type: DATE,
+      allowNull: false,
+    },
+    creatorName: {
+      type: STRING(76),
+      allowNull: false,
+    },
+    creatorId: {
+      type: STRING(38),
+      allowNull: false,
+    },
+    category_id: STRING(38),
+    orgUuid: {
+      type: STRING(38),
+      allowNull: false,
+    },
+    status: {
+      type: ENUM("up", "down"),
+      allowNull: false,
+    },
+    name: {
+      type: STRING(30),
+      allowNull: false,
+    },
+    unitName: {
+      type: STRING(76),
+      allowNull: false,
+    }, // 商品的计量单位名称
+    salePrice: DECIMAL,
+    goodsInfo: TEXT,
+    spec: STRING(255),
+    thumbnail: STRING(255), // 商品缩略图的 URL
+    imagesJsonStr: STRING(2000), // 存储商品图片的 JSON 格式字符串
+    version: {
+      type: BIGINT,
+      defaultValue: 0,
+    },
+  };
+};

@@ -1,0 +1,20 @@
+/*
+ * @Author: caohanzhong 342292451@qq.com
+ * @Date: 2024-10-21 21:41:43
+ * @LastEditors: caohanzhong 342292451@qq.com
+ * @LastEditTime: 2024-10-21 21:43:23
+ * @FilePath: \Mini_program_backend\.sequelizerc
+ * @Description:
+ *
+ * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
+ */
+"use strict";
+
+const path = require("path");
+
+module.exports = {
+  config: path.join(__dirname, "database/config.json"),
+  "migrations-path": path.join(__dirname, "database/migrations"),
+  "seeders-path": path.join(__dirname, "database/seeders"),
+  "models-path": path.join(__dirname, "app/model"),
+};
