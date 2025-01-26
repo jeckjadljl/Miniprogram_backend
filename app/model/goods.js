@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-14 22:57:39
+ * @LastEditTime: 2025-01-15 16:46:15
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -15,7 +15,6 @@ module.exports = app => {
 
   const Goods = model.define("goods", GoodsSchema, {
     tableName: "goods", // 对应数据库中的 'goods' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   Goods.associate = function () {
@@ -69,7 +68,7 @@ module.exports = app => {
     orgUuid,
     goodsAttributes,
   }) => {
-    return await model.Goodscategory.findAll({
+    return await model.GoodsCategory.findAll({
       attributes: categoryAttributes,
       where: { orgUuid },
       include: [
@@ -138,6 +137,11 @@ module.exports = app => {
    * @return {object|null} - 查找结果
    */
   Goods.get = async ({ goods_id, orgUuid }) => {
+    if (!orgUuid) {
+      return await Goods.findOne({
+        where: { goods_id },
+      });
+    }
     return await Goods.findOne({
       where: { goods_id, orgUuid },
     });
@@ -155,8 +159,8 @@ module.exports = app => {
   };
 
   // 获取所有商品列表
-  Goods.getAllGoods = async () => {
-    return await Goods.findAll();
+  Goods.getAllGoods = async ({ attributes }) => {
+    return await Goods.findAll({ attributes });
   };
 
   return Goods;

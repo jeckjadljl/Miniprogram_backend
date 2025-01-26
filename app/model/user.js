@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-17 11:24:06
+ * @LastEditTime: 2025-01-12 19:02:24
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -17,7 +17,6 @@ module.exports = app => {
 
   const User = model.define("user", userSchema, {
     tableName: "user", // 对应数据库中的 'user_data' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   // 在这里定义 belongsToMany 关联

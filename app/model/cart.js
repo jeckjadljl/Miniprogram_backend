@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:27:25
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-18 18:08:54
+ * @LastEditTime: 2025-01-22 18:56:07
  * @FilePath: \Mini_program_backend\app\model\cart.js
  * @Description:
  *
@@ -16,46 +16,66 @@ module.exports = app => {
 
   const Cart = model.define("cart", CartSchema, {
     tableName: "cart", // 对应数据库中的 'cart' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   Cart.associate = function () {
     Cart.belongsTo(model.User, { foreignKey: "user_id" });
-    Cart.belongsTo(model.Goods, { foreignKey: "goods_id" });
+    Cart.belongsTo(model.Goods, { foreignKey: "goods_id", as: "goods" });
   };
 
   // 添加商品到购物车
-  Cart.addGoods = async (userId, goodsId, quantity) => {
+  Cart.addGoods = async (userId, goodsId, spec, quantity) => {
     await Cart.create({
       user_id: userId,
       goods_id: goodsId,
       quantity,
-      add_date: new Date(),
+      spec,
     });
     return userId;
   };
 
   // 查找购物车商品项
-  Cart.findGoodsInCart = async (userId, goodsId) => {
+  Cart.findGoodsInCart = async (userId, goodsId, spec) => {
     return await Cart.findOne({
-      where: { user_id: userId, goods_id: goodsId },
+      where: { user_id: userId, goods_id: goodsId, spec },
     });
   };
 
   // 更新购物车商品数量
-  Cart.updateGoodsQuantity = async (userId, goodsId, quantity) => {
-    const cartItem = await Cart.findGoodsInCart(userId, goodsId);
+  Cart.updateGoodsQuantity = async (userId, goodsId, spec, quantity) => {
+    const cartItem = await Cart.findGoodsInCart(userId, goodsId, spec);
     if (cartItem) {
       cartItem.quantity = quantity;
       return await cartItem.save();
     }
-    return null;
+    return userId;
+  };
+
+  Cart.updateGoodsSpec = async (
+    userId,
+    goodsId,
+    oldSpec,
+    newSpec,
+    quantity
+  ) => {
+    await Cart.update(
+      { spec: newSpec, quantity },
+      {
+        where: {
+          user_id: userId,
+          goods_id: goodsId,
+          spec: oldSpec,
+        },
+      }
+    );
+
+    return userId;
   };
 
   // 删除购物车中的商品
-  Cart.removeGoods = async (userId, goodsId) => {
+  Cart.removeGoods = async (userId, goodsId, spec) => {
     return await Cart.destroy({
-      where: { user_id: userId, goods_id: goodsId },
+      where: { user_id: userId, goods_id: goodsId, spec },
     });
   };
 
@@ -66,15 +86,13 @@ module.exports = app => {
       include: [
         {
           model: model.Goods,
-          as: "good",
+          as: "goods",
           attributes: [
-            "goods_id",
             "name",
             "salePrice",
             "unitName",
             "thumbnail",
             "goodsInfo",
-            "spec",
           ],
         },
       ],

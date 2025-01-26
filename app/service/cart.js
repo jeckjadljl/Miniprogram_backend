@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-13 16:09:31
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-18 18:16:14
+ * @LastEditTime: 2025-01-22 15:51:20
  * @FilePath: \Mini_program_backend\app\service\cart.js
  * @Description:
  *
@@ -16,7 +16,7 @@ const Service = require("egg").Service;
 
 class CartService extends Service {
   // 添加商品到购物车
-  async addGoodsToCart(userId, goodsId, quantity) {
+  async addGoodsToCart(userId, goodsId, spec, quantity) {
     const { Cart, Goods } = this.ctx.model;
 
     // 检查商品是否存在
@@ -26,7 +26,7 @@ class CartService extends Service {
     }
 
     // 检查购物车中是否已存在该商品
-    const cart = await Cart.findGoodsInCart(userId, goodsId);
+    const cart = await Cart.findGoodsInCart(userId, goodsId, spec);
 
     if (cart) {
       // 更新数量
@@ -34,12 +34,48 @@ class CartService extends Service {
       const result = await Cart.updateGoodsQuantity(
         userId,
         goodsId,
+        spec,
         cart.quantity
       );
       return result;
     }
     // 添加新商品到购物车
-    const result = await Cart.addGoods(userId, goodsId, quantity);
+    const result = await Cart.addGoods(userId, goodsId, spec, quantity);
+    return result;
+  }
+
+  async updateSpec(userId, goodsId, oldSpec, spec, quantity) {
+    const { Cart, Goods } = this.ctx.model;
+
+    const goods = await Goods.findByPk(goodsId);
+    if (!goods) {
+      throw new Error("Goods not found");
+    }
+
+    const cart = await Cart.findGoodsInCart(userId, goodsId, spec);
+
+    if (cart) {
+      await Cart.removeGoods(userId, goodsId, oldSpec);
+
+      // 更新数量
+      cart.quantity += quantity;
+      const result = await Cart.updateGoodsQuantity(
+        userId,
+        goodsId,
+        spec,
+        cart.quantity
+      );
+      return result;
+    }
+
+    // 修改购物车中商品的规格
+    const result = await Cart.updateGoodsSpec(
+      userId,
+      goodsId,
+      oldSpec,
+      spec,
+      quantity
+    );
     return result;
   }
 

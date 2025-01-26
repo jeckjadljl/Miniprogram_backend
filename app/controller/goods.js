@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 15:31:58
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-14 21:28:52
+ * @LastEditTime: 2025-01-14 11:12:36
  * @FilePath: \Mini_program_backend\app\controller\goods.js
  * @Description:
  *
@@ -13,15 +13,41 @@
 const Controller = require("../core/base_controller");
 
 class GoodsController extends Controller {
-  async saveNew() {
+  /**
+   * 微信小程序获取商品数据
+   */
+
+  /**
+   * 获取key为类别的商品数据
+   */
+  async getGoodsWithCategory() {
     const { ctx } = this;
-    const result = await ctx.service.goods.saveNew(ctx.request.body);
-    this.success(result);
+    const { orgUuid } = ctx.request.body;
+    const goods = await ctx.service.goods.getGoodsWithCategory(orgUuid);
+
+    this.success(goods);
   }
 
   async getGoodsList() {
     const { ctx } = this;
     const result = await ctx.service.goods.getAllGoods();
+    this.success(result);
+  }
+
+  async getGoodsById() {
+    const { ctx } = this;
+    const { goods_id } = ctx.request.body;
+    const result = await ctx.service.goods.getGoodsById(goods_id);
+    this.success(result);
+  }
+
+  /**
+   * 管理端获取商品数据
+   */
+
+  async saveNew() {
+    const { ctx } = this;
+    const result = await ctx.service.goods.saveNew(ctx.request.body);
     this.success(result);
   }
 

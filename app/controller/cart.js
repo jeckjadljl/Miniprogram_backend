@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 17:11:45
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-05 16:54:00
+ * @LastEditTime: 2025-01-22 17:22:37
  * @FilePath: \Mini_program_backend\app\controller\cart.js
  * @Description:
  *
@@ -15,10 +15,24 @@ const Controller = require("../core/base_controller");
 class CartController extends Controller {
   async addGoodsToCart() {
     const { ctx } = this;
-    const { userId, goodsId, quantity = 1 } = ctx.request.body;
+    const { userId, goodsId, spec, quantity = 1 } = ctx.request.body;
     const goods = await ctx.service.cart.addGoodsToCart(
       userId,
       goodsId,
+      spec,
+      quantity
+    );
+    this.success(goods);
+  }
+
+  async updateSpec() {
+    const { ctx } = this;
+    const { userId, goodsId, oldSpec, spec, quantity = 1 } = ctx.request.body;
+    const goods = await ctx.service.cart.updateSpec(
+      userId,
+      goodsId,
+      oldSpec,
+      spec,
       quantity
     );
     this.success(goods);

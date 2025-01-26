@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 18:37:48
+ * @LastEditTime: 2025-01-11 17:36:25
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
@@ -52,6 +52,7 @@ class AppBootHook {
       { name: "general", description: "严选会员" },
       { name: "junior", description: "分享会员" },
       { name: "premium", description: "资深会员" },
+      { name: "user", description: "普通用户" },
     ];
 
     for (const role of roles) {

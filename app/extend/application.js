@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-17 16:56:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 18:24:41
+ * @LastEditTime: 2025-01-13 11:00:40
  * @FilePath: \Mini_program_backend\app\extend\application.js
  * @Description:
  *
@@ -21,6 +21,19 @@ module.exports = {
   _,
   dayFormat: "%Y-%m-%d",
   dayTimeFormat: "%Y-%m-%d %H:%i:%s",
+
+  getEastEightTime() {
+    // 获取当前 UTC 时间
+    const now = new Date();
+
+    // 转换为东八区时间（添加 8 小时）
+    const eastEightTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+
+    // 格式化为需要的时间格式
+    const formattedTime = fecha.format(eastEightTime, "YYYY-MM-DD HH:mm:ss");
+
+    return formattedTime;
+  },
 
   /**
    * 统一事务处理方法

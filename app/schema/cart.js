@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 16:13:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-24 11:58:32
+ * @LastEditTime: 2025-01-22 15:58:26
  * @FilePath: \Mini_program_backend\app\schema\cart.js
  * @Description:
  *
@@ -24,6 +24,11 @@ module.exports = app => {
       allowNull: false,
       primaryKey: true, // 设置为组合主键的一部分
     }, // 关联产品表
+    spec: {
+      type: STRING(255),
+      allowNull: false,
+      primaryKey: true, // 将 spec 也作为组合主键的一部分
+    },
     quantity: {
       type: INTEGER,
       allowNull: false,

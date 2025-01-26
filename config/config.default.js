@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-30 23:22:33
+ * @LastEditTime: 2025-01-13 11:02:24
  * @FilePath: \Mini_program_backend\config\config.default.js
  * @Description:
  *
@@ -154,7 +154,6 @@ module.exports = appInfo => {
 
   config.jwt = {
     expire: 7200, // 2小时
-    refresh_expire: 259200, // 3天
     secret: JWT_SECRET,
     // ignore: ["/api/registered", "/api/login"], // 哪些请求不需要认证
     // expiresIn: '24h',

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-09 17:09:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-03 10:36:54
+ * @LastEditTime: 2025-01-13 11:16:32
  * @FilePath: \Mini_program_backend\app\service\jwt.js
  * @Description:
  *
@@ -12,7 +12,6 @@
 
 const Service = require("egg").Service;
 const axios = require("axios"); // 使用 axios
-const UUID = require("uuid").v4;
 
 const appid = process.env.WX_APPID; // 小程序的 appid
 const secret = process.env.WX_APPSECRET; // 小程序的密钥
@@ -24,13 +23,12 @@ class JwtService extends Service {
       throw new Error("Invalid parameters");
     }
 
-    const now = new Date();
-    const jti = UUID(); // Generate a unique identifier
+    // 获取当前时间的 Unix 时间戳（单位为秒）
+    const now = Math.floor(Date.now() / 1000);
 
     const payload = {
       aud: "http://127.0.0.1",
-      iss: "", // Configure as per actual scenario
-      jti,
+      iss: "mmyx", // Configure as per actual scenario
       iat: now,
       nbf: now,
       exp: now + expire,
@@ -42,6 +40,7 @@ class JwtService extends Service {
       const token = await this.app.jwt.sign(payload, secret);
       return token;
     } catch (error) {
+      console.error("JWT 签名失败，详细信息：", error);
       throw new Error("JWT signing failed");
     }
   }

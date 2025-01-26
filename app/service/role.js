@@ -30,9 +30,9 @@ class RoleService extends Service {
    * @param {object} roleid 角色的id
    * @return {object|null} - 关联的结果
    */
-  async UserRoles(userid, roleid) {
+  async UserRoles(userId, roleId) {
     const { ctx } = this;
-    const userRoles = await ctx.model.UserRoles.add(userid, roleid);
+    const userRoles = await ctx.model.UserRoles.add({ userId, roleId });
     return userRoles;
   }
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-07 16:12:01
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-25 11:11:30
+ * @LastEditTime: 2025-01-12 15:51:31
  * @FilePath: \Mini_program_backend\app\schema\user_roles.js
  * @Description:
  *
@@ -11,7 +11,7 @@
 "use strict";
 
 module.exports = app => {
-  const { STRING, UUIDV4, DATE } = app.Sequelize;
+  const { STRING, UUIDV4, DATE, BIGINT } = app.Sequelize;
 
   return {
     id: {
@@ -28,6 +28,14 @@ module.exports = app => {
     createdTime: {
       type: DATE,
       allowNull: false,
+    },
+    lastModifiedTime: {
+      type: DATE,
+      allowNull: false,
+    },
+    version: {
+      type: BIGINT,
+      defaultValue: 0,
     },
   };
 };

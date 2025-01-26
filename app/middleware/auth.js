@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-30 17:13:57
+ * @LastEditTime: 2025-01-17 11:48:16
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -15,7 +15,7 @@ module.exports = options => {
     const authHeader = ctx.request.header.authorization;
 
     // 判断是否为登录或刷新 token 的接口，如果是，直接放行
-    const exemptRoutes = ["/login", "/refresh-token", "/"];
+    const exemptRoutes = ["/login", "/login/test", "/refresh-token", "/"];
     const exemptPrefixes = [
       "/goods",
       "/cart",
@@ -26,6 +26,7 @@ module.exports = options => {
       "/bill",
       "/deliveryTimeType",
       "/freightPlan",
+      "/referral",
     ]; // 定义需要前缀匹配的路由
     if (
       exemptRoutes.includes(ctx.path) ||

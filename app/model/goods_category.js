@@ -7,7 +7,6 @@ module.exports = app => {
 
   const GoodsCategory = model.define("goodscategory", goodsCategorySchema, {
     tableName: "goods_category",
-    timestamps: false,
   });
 
   GoodsCategory.associate = function () {

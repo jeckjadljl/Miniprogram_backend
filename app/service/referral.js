@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-03 10:37:29
+ * @LastEditTime: 2025-01-18 22:48:53
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -12,7 +12,7 @@
 
 const Service = require("egg").Service;
 const axios = require("axios");
-const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
 
 class ReferralService extends Service {
   async distributeReferralReward(referredUserId, membershipLevel) {
@@ -77,14 +77,68 @@ class ReferralService extends Service {
     return 0; // 不在有效奖励范围
   }
 
-  async generateMiniProgramCode(scene, page) {
+  async saveNew(referrerId, referredUserId) {
+    const { Referrals, UserRoles } = this.ctx.model;
+
+    const referrerL1 = await Referrals.findReferred({
+      referredUserId,
+      attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
+    });
+    if (!referrerL1) {
+      const referrerL2 = await Referrals.findReferred({
+        referredUserId: referrerId,
+        attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
+      });
+      if (referrerL2) {
+        await Referrals.saveNew({
+          referrerId: referrerL2.referrer_id,
+          referredUserId,
+          referralLevel: 2,
+        });
+        console.log(
+          `用户 ${referredUserId} 已与他的团队长${referrerL2.referrer_id}绑定关系`
+        );
+      }
+
+      const result = await Referrals.saveNew({
+        referrerId,
+        referredUserId,
+        referralLevel: 1,
+      });
+      const getaReferrerRole = await UserRoles.getUserHighestRole(referrerId);
+
+      return {
+        direct: {
+          result,
+          getaReferrerRole,
+        },
+        team: referrerL2,
+      };
+    }
+    // 已有推荐关系
+    throw new Error("该用户已有推荐关系，无法再与当前推荐人绑定关系");
+  }
+
+  async generateMiniProgramCode(scene) {
     const { ctx } = this;
+    const { Qrcode } = ctx.model;
+
+    // 生成一个不超过 32 个字符的推广码ID
+    const promotionCodeId = uuidv4().replace(/-/g, "").slice(0, 32);
+
+    // 查询数据库是否存在该用户的二维码
+    const existingRecord = await Qrcode.get({ referrerId: scene });
+    if (existingRecord) {
+      // 如果已存在，直接返回二维码记录
+      return { qrcodeBase64: existingRecord.qrcode };
+    }
+
     const accessToken = await ctx.service.jwt.getAccessToken(); // 获取 access_token
+    console.log(accessToken);
     const url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${accessToken}`;
 
     const requestData = {
-      scene, // 参数，限制 32 个可见字符（如推广码 ID）
-      page,
+      scene: promotionCodeId, // 参数，限制 32 个可见字符（如推广码 ID）
       width: 280, // 小程序码宽度
     };
 
@@ -92,10 +146,42 @@ class ReferralService extends Service {
       responseType: "arraybuffer",
     });
 
-    // 将小程序码保存到服务器本地
-    const filePath = `./qrcodes/${scene}.png`;
-    fs.writeFileSync(filePath, response.data);
-    return filePath;
+    if (response.headers["content-type"] === "image/jpeg") {
+      // 保存数据到数据库
+      // await Qrcode.saveNew({
+      //   referrerId: scene, // 确保传递正确的 referrerId
+      //   promotionCodeId,
+      //   qrcode: base64Image,
+      // });
+
+      return {
+        qrcodebuffer: response.data, // 返回二维码的 Base64 格式
+        promotionCode: promotionCodeId,
+      };
+    }
+    const error = JSON.parse(response.data.toString());
+    throw new Error(`Failed to generate QR code: ${error.errmsg}`);
+  }
+
+  async updataQRCode(path, referrerId, promotionCodeId) {
+    const { ctx } = this;
+    const { Qrcode } = ctx.model;
+
+    // 查询数据库是否存在该用户的二维码
+    const existingRecord = await Qrcode.get({ referrerId });
+    if (existingRecord) {
+      // 如果已存在，直接返回二维码记录
+      return { qrcode_path: existingRecord.qrcode };
+    }
+
+    // 保存数据到数据库
+    const result = await Qrcode.saveNew({
+      referrerId, // 确保传递正确的 referrerId
+      promotionCodeId,
+      qrcode: path,
+    });
+
+    return { qrcode_path: result.qrcode };
   }
 }
 

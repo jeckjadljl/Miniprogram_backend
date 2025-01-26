@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 12:02:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 11:26:49
+ * @LastEditTime: 2025-01-09 22:59:20
  * @FilePath: \Mini_program_backend\app\service\goods.js
  * @Description:
  *
@@ -204,7 +204,20 @@ class GoodsService extends Service {
   // 获取所有商品列表
   async getAllGoods() {
     const { Goods } = this.ctx.model;
-    return await Goods.getAllGoods();
+    return await Goods.getAllGoods({
+      attributes: [
+        "goods_id",
+        "version",
+        "name",
+        "status",
+        "unitName",
+        "spec",
+        "goodsInfo",
+        "salePrice",
+        "thumbnail",
+        "category_id",
+      ],
+    });
   }
 }
 

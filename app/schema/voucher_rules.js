@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-28 15:38:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-11-30 10:44:42
+ * @LastEditTime: 2025-01-12 12:15:09
  * @FilePath: \Mini_program_backend\app\schema\voucher_rules.js
  * @Description:
  *
@@ -11,7 +11,7 @@
 "use strict";
 
 module.exports = app => {
-  const { STRING, UUIDV4, DECIMAL } = app.Sequelize;
+  const { STRING, UUIDV4, DECIMAL, DATE, BIGINT } = app.Sequelize;
 
   return {
     id: {
@@ -22,5 +22,17 @@ module.exports = app => {
     },
     min_spend: DECIMAL(10, 2), // 最低消费金额
     deduction: DECIMAL(10, 2), // 抵扣金额
+    createdTime: {
+      type: DATE,
+      allowNull: false,
+    },
+    lastModifiedTime: {
+      type: DATE,
+      allowNull: false,
+    },
+    version: {
+      type: BIGINT,
+      defaultValue: 0,
+    },
   };
 };
