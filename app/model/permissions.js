@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-06 16:31:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-02 18:47:01
+ * @LastEditTime: 2025-01-27 17:54:29
  * @FilePath: \Mini_program_backend\app\model\permissions.js
  * @Description:
  *
@@ -16,7 +16,6 @@ module.exports = app => {
 
   const Permissions = model.define("permissions", permissionsSchema, {
     tableName: "permissions", // 对应数据库中的 'roles' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   // 在这里定义 belongsToMany 关联

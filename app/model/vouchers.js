@@ -16,7 +16,6 @@ module.exports = app => {
 
   const Vouchers = model.define("vouchers", vouchersSchema, {
     tableName: "vouchers", // 对应数据库中的 'roles' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   // 在这里定义 belongsToMany 关联

@@ -15,7 +15,6 @@ module.exports = app => {
 
   const Order = model.define("order", OrderSchema, {
     tableName: "orders", // 对应数据库中的 'order' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   Order.associate = function () {

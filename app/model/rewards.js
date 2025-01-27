@@ -14,7 +14,6 @@ module.exports = app => {
 
   const Rewards = model.define("reward", RewardsSchema, {
     tableName: "rewards",
-    timestamps: false,
   });
 
   Rewards.associate = function () {

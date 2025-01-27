@@ -1,6 +1,12 @@
 # Use Node.js as the base image
 FROM node:18
 
+# Install dockerize
+RUN apt-get update && apt-get install -y wget && \
+    wget https://github.com/jwilder/dockerize/releases/download/v0.6.1/dockerize-linux-amd64-v0.6.1.tar.gz && \
+    tar -xvzf dockerize-linux-amd64-v0.6.1.tar.gz && \
+    mv dockerize /usr/local/bin/
+
 # Set working directory
 WORKDIR /app
 

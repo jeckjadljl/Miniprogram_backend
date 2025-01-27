@@ -14,7 +14,6 @@ module.exports = app => {
 
   const Points = model.define("points", PointsSchema, {
     tableName: "points",
-    timestamps: false,
   });
 
   Points.associate = function () {

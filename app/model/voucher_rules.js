@@ -16,7 +16,6 @@ module.exports = app => {
 
   const VoucherRules = model.define("voucher_rules", VoucherRulesSchema, {
     tableName: "voucher_rules", // 对应数据库中的 'roles' 表
-    timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
   });
 
   VoucherRules.addRules = async ({ min_spend, deduction }) => {

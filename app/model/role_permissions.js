@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-06 16:31:56
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-03 10:56:19
+ * @LastEditTime: 2025-01-27 17:55:32
  * @FilePath: \Mini_program_backend\app\model\role_permissions.js
  * @Description:
  *
@@ -22,7 +22,6 @@ module.exports = app => {
     rolePermissionsSchema,
     {
       tableName: "role_permissions", // 对应数据库中的 'roles' 表
-      timestamps: false, // 如果表中没有 createdAt 和 updatedAt 字段
     }
   );
 
