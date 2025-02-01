@@ -6,6 +6,13 @@
     "host": "127.0.0.1",
     "dialect": "mysql"
   },
+  "prod": {
+    "username": "root",
+    "password": "chz123",
+    "database": "mmyx_mp_db",
+    "host": "mysql",
+    "dialect": "mysql"
+  },
   "test": {
     "username": "root",
     "password": "chz123",

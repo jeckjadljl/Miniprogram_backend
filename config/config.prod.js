@@ -1,17 +1,15 @@
 /*
  * @Author: caohanzhong 342292451@qq.com
- * @Date: 2024-10-16 17:44:22
+ * @Date: 2025-02-01 11:51:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-01 16:32:48
- * @FilePath: \Mini_program_backend\config\config.test.js
+ * @LastEditTime: 2025-02-01 16:51:46
+ * @FilePath: \Mini_program_backend\config\config.prod.js
  * @Description:
  *
- * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
+ * Copyright (c) 2025 by ${git_name_email}, All Rights Reserved.
  */
 /* eslint valid-jsdoc: "off" */
-require("dotenv").config({
-  path: `.env.${process.env.NODE_ENV || "test"}`,
-});
+require("dotenv").config();
 const fecha = require("fecha");
 /**
  * @param {Egg.EggAppInfo} appInfo app info
@@ -24,14 +22,14 @@ module.exports = appInfo => {
   const config = (exports = {});
 
   const {
-    MYSQL_DATABASE_UNITEST,
-    MYSQL_HOST_UNITEST,
+    MYSQL_DATABASE_PROD,
+    MYSQL_HOST_PROD,
     MYSQL_PORT,
     MYSQL_USERNAME,
     MYSQL_PASSWORD,
     JWT_SECRET,
     REDIS_PORT,
-    REDIS_HOST_UNITEST,
+    REDIS_HOST_PROD,
     NODEJS_PORT,
   } = process.env;
 
@@ -66,7 +64,7 @@ module.exports = appInfo => {
     // database configuration
     client: {
       // host
-      host: MYSQL_HOST_UNITEST,
+      host: MYSQL_HOST_PROD,
       // port
       port: MYSQL_PORT,
       // username
@@ -74,7 +72,7 @@ module.exports = appInfo => {
       // password
       password: MYSQL_PASSWORD,
       // database
-      database: MYSQL_DATABASE_UNITEST,
+      database: MYSQL_DATABASE_PROD,
     },
     // load into app, default is open
     app: true,
@@ -84,8 +82,8 @@ module.exports = appInfo => {
 
   config.sequelize = {
     dialect: "mysql", // support: mysql, mariadb, postgres, mssql
-    database: MYSQL_DATABASE_UNITEST,
-    host: MYSQL_HOST_UNITEST,
+    database: MYSQL_DATABASE_PROD,
+    host: MYSQL_HOST_PROD,
     port: MYSQL_PORT,
     username: MYSQL_USERNAME,
     password: MYSQL_PASSWORD,
@@ -126,27 +124,27 @@ module.exports = appInfo => {
     clients: {
       default: {
         // 默认数据库，用于通用缓存
-        host: REDIS_HOST_UNITEST, // Redis host
+        host: REDIS_HOST_PROD, // Redis host
         port: REDIS_PORT, // Redis port
         password: "",
         db: 0,
       },
       token: {
         // 登录 token 数据库
-        host: REDIS_HOST_UNITEST, // Redis host
+        host: REDIS_HOST_PROD, // Redis host
         port: REDIS_PORT, // Redis port
         password: "",
         db: 1,
       },
       order: {
         // 订单单号数据库
-        host: REDIS_HOST_UNITEST, // Redis host
+        host: REDIS_HOST_PROD, // Redis host
         port: REDIS_PORT, // Redis port
         password: "",
         db: 2,
       },
       subscribe: {
-        host: REDIS_HOST_UNITEST,
+        host: REDIS_HOST_PROD,
         port: REDIS_PORT,
         password: "",
         db: 3,
@@ -156,7 +154,6 @@ module.exports = appInfo => {
 
   config.jwt = {
     expire: 7200, // 2小时
-    refresh_expire: 259200, // 3天
     secret: JWT_SECRET,
     // ignore: ["/api/registered", "/api/login"], // 哪些请求不需要认证
     // expiresIn: '24h',

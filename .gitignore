@@ -16,3 +16,4 @@ typings/
 
 .env
 .env.test
+.env.prod

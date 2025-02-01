@@ -1,6 +1,35 @@
 services:
+
+  # Mysql 服务
+  mysql:
+    image: mysql:8.0.33
+    container_name: mysql
+    ports:
+      - "${MYSQL_DOCKER_PORT:-3307}:3306"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_DATABASE: ${MYSQL_DATABASE_UNITEST}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # 将初始化脚本挂载到容器中
+    networks:
+      - miniprogram-network
+    # command: >
+    #   /bin/sh -c "
+    #     echo 'ALTER USER \\'root\\'@\\'localhost\\' IDENTIFIED WITH mysql_native_password BY \\'${MYSQL_PASSWORD}\\';' > /docker-entrypoint-initdb.d/init.sql &&
+    #     /entrypoint.sh mysqld"
+
+    # Redis 服务
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "${REDIS_DOCKER_PORT:-6379}:6379"
+    networks:
+      - miniprogram-network
+
   # Node.js 应用服务
-  miniprogramsever:
+  miniprogram_backend:
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,47 +39,28 @@ services:
       - mysql
       - redis
     networks:
-      - backend_network
+      - miniprogram-network
     environment:
+      TZ: Asia/Shanghai
+      EGG_SERVER_ENV: test
       NODEJS_PORT: ${NODEJS_PORT}
       JWT_SECRET: ${JWT_SECRET}
       MYSQL_USERNAME: ${MYSQL_USERNAME}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_HOST: ${MYSQL_HOST_UNITEST}
       MYSQL_PORT: ${MYSQL_PORT}
       MYSQL_DATABASE: ${MYSQL_DATABASE_UNITEST}
-      REDIS_HOST: ${REDIS_HOST}
+      REDIS_HOST: ${REDIS_HOST_UNITEST}
       REDIS_PORT: ${REDIS_PORT}
       WX_APPID: ${WX_APPID}
       WX_APPSECRET: ${WX_APPSECRET}
     command: >
-      sh -c "npx sequelize-cli db:migrate --name 20241107073749-init-all-tables.js --env test && npm run dev"
-
-  # MongoDB 服务
-  mysql:
-    image: mysql
-    ports:
-      - "${MYSQL_DOCKER_PORT:-3307}:3306"
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE_UNITEST}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-    networks:
-      backend_network:
-        ipv4_address: 172.22.0.2
-
-  # Redis 服务
-  redis:
-    image: redis
-    ports:
-      - "${REDIS_DOCKER_PORT:-6380}:6379"
-    networks:
-      backend_network:
-        ipv4_address: 172.22.0.3
+      sh -c "
+        dockerize -wait tcp://redis:6379 -timeout 60s &&
+        dockerize -wait tcp://mysql:3306 -timeout 60s &&
+        npx sequelize-cli db:migrate --name 20241107073749-init-all-tables.js --env test &&
+        npm run dev"
 
 networks:
-  backend_network:
+  miniprogram-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.22.0.0/24
-          gateway: 172.22.0.1
