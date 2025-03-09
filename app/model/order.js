@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-22 18:07:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-30 17:13:05
+ * @LastEditTime: 2025-03-08 23:10:09
  * @FilePath: \Mini_program_backend\app\model\order.js
  * @Description:
  *
@@ -281,24 +281,17 @@ module.exports = app => {
    * @param {String} userId - 用户ID
    * @return {Array} 用户订单列表
    */
-  Order.getUserOrders = async function (userId) {
-    return await this.findAll({
+  Order.getUserOrders = async params => {
+    const { userId, orderAttributes, orderLineAttributes } = params; // 再解构
+
+    return await Order.findAll({
       where: { user_id: userId },
+      attributes: orderAttributes,
       include: [
         {
           model: model.OrderItem,
-          as: "order_items",
-          include: [
-            {
-              model: model.Goods,
-              attributes: [
-                "goods_id",
-                "goods_name",
-                "goods_images",
-                "goods_price",
-              ],
-            },
-          ],
+          as: "orderitems",
+          attributes: orderLineAttributes,
         },
       ],
     });

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-22 17:03:53
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-24 14:34:36
+ * @LastEditTime: 2025-03-05 17:37:55
  * @FilePath: \Mini_program_backend\app\model\referrals.js
  * @Description:
  *
@@ -44,9 +44,22 @@ module.exports = app => {
     });
   };
 
-  Referrals.countReferrals = async userId => {
+  Referrals.getReferred = async ({ referrerId, attributes }) => {
+    return await Referrals.findAll({
+      where: { referrer_id: referrerId },
+      include: [
+        {
+          model: model.User,
+          attributes,
+          as: "referredUser",
+        },
+      ],
+    });
+  };
+
+  Referrals.countReferrals = async referrerId => {
     return await Referrals.count({
-      where: { referrer_id: userId, membership_level: "junior" },
+      where: { referrer_id: referrerId },
     });
   };
 
@@ -60,7 +73,7 @@ module.exports = app => {
 
       // 查询推荐人信息，并限制返回字段
       const referrerInfo = await model.User.findOne({
-        where: { id: referrerId },
+        where: { uuid: referrerId },
         attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
       });
 

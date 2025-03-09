@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 15:31:58
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-14 11:12:36
+ * @LastEditTime: 2025-03-05 10:36:33
  * @FilePath: \Mini_program_backend\app\controller\goods.js
  * @Description:
  *
@@ -36,8 +36,8 @@ class GoodsController extends Controller {
 
   async getGoodsById() {
     const { ctx } = this;
-    const { goods_id } = ctx.request.body;
-    const result = await ctx.service.goods.getGoodsById(goods_id);
+    const { goods_id, orgUuid } = ctx.request.body;
+    const result = await ctx.service.goods.getGoodsById(goods_id, orgUuid);
     this.success(result);
   }
 

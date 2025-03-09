@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-12 19:02:24
+ * @LastEditTime: 2025-03-02 14:46:48
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -31,6 +31,7 @@ module.exports = app => {
       Points,
       Vouchers,
       UserRoles,
+      Qrcode,
     } = model;
     User.belongsToMany(Role, {
       through: UserRoles,
@@ -42,6 +43,7 @@ module.exports = app => {
       foreignKey: "user_id",
       otherKey: "goods_id",
     });
+    User.hasOne(Qrcode, { foreignKey: "referrer_id", as: "referrerInfo" });
     User.hasMany(Order, { foreignKey: "user_id" });
     User.hasMany(Address, { foreignKey: "user_id" });
     // 用户作为推荐人（多对多）

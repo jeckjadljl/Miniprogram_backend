@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-13 16:09:31
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-22 15:51:20
+ * @LastEditTime: 2025-02-28 16:34:50
  * @FilePath: \Mini_program_backend\app\service\cart.js
  * @Description:
  *
@@ -80,10 +80,10 @@ class CartService extends Service {
   }
 
   // 删除购物车中的商品
-  async removeGoodsFromCart(userId, goodsId) {
+  async removeGoodsFromCart(userId, goodsId, spec) {
     const { Cart } = this.ctx.model;
     // 添加新商品到购物车
-    const result = await Cart.removeGoods(userId, goodsId);
+    const result = await Cart.removeGoods(userId, goodsId, spec);
     return result;
   }
 

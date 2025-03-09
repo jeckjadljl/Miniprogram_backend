@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-17 16:56:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-13 11:00:40
+ * @LastEditTime: 2025-02-27 23:01:41
  * @FilePath: \Mini_program_backend\app\extend\application.js
  * @Description:
  *
@@ -98,13 +98,22 @@ module.exports = {
   },
 
   // 单号生成，暂时是日期+6位
-  async getBillNumber(prefix) {
+  async getBillNumber(prefix = "B") {
     const ctx = this.createAnonymousContext(); // 创建临时上下文
     const { redis } = ctx.service;
     const dateStr = fecha.format(new Date(), "YYYYMMDD");
-    const key = `${prefix || "B"}${dateStr}`;
-    const value = (await redis.get(key, "order")) || 1;
+    const key = `${prefix}${dateStr}`;
 
+    // 使用 Redis 的 INCR 命令自增序列号
+    // const sequence = await redis.incr(key);
+    const value = (await redis.get(key, "order")) || 1;
+    // 如果序列号为 1，设置键的过期时间为 24 小时（86400 秒）
+    // if (sequence === 1) {
+    //   await redis.expire(key, 86400);
+    // }
+
+    // 返回完整的订单号，格式为 前缀 + 日期 + 流水号（补零到 6 位）
+    // return `${prefix}${dateStr}${String(sequence).padStart(6, "0")}`;
     await redis.set(key, value + 1, 3600 * 24, "order");
 
     return `${key}${String(value).padStart(6, "0")}`;

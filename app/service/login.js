@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 18:15:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-25 20:53:39
+ * @LastEditTime: 2025-03-07 18:33:00
  * @FilePath: \Mini_program_backend\app\service\login.js
  * @Description:
  *
@@ -33,9 +33,7 @@ class LoginService extends Service {
           },
         }
       );
-
       const { openid, session_key, errcode, errmsg } = response.data;
-
       if (errcode) {
         console.error(`微信接口错误: errcode=${errcode}, errmsg=${errmsg}`);
         throw new Error(`微信接口错误: ${errmsg || "未知错误"}`);
@@ -109,6 +107,41 @@ class LoginService extends Service {
           3 * 24 * 60 * 60,
           "token"
         ); // 设置3天有效期
+
+        if (
+          getuser.avatar !== userInfo.avatarUrl ||
+          getuser.user_name !== userInfo.nickName
+        ) {
+          const userData = {};
+
+          // 更新头像
+          if (getuser.avatar !== userInfo.avatarUrl) {
+            userData.avatar = userInfo.avatarUrl;
+          }
+
+          // 更新昵称
+          if (getuser.user_name !== userInfo.nickName) {
+            userData.user_name = userInfo.nickName;
+          }
+
+          // 如果头像或昵称有变化，更新数据库
+          await ctx.service.user.updateUser(getuser.uuid, userData);
+
+          // 重新获取更新后的用户数据
+          const updatedUser = await ctx.service.user.getUserByOpenid(openid);
+          // 只返回头像和名称
+          const filteredUser = {
+            uuid: updatedUser.uuid,
+            avatarUrl: updatedUser.avatar,
+            nickName: updatedUser.user_name,
+          };
+
+          return {
+            token: token.token,
+            session_key,
+            user: filteredUser,
+          };
+        }
 
         // 只返回头像和名称
         const filteredUser = {
@@ -274,6 +307,22 @@ class LoginService extends Service {
       console.error("获取手机号失败", error);
       throw error;
     }
+  }
+
+  async Login(code) {
+    const response = await axios.get(
+      "https://api.weixin.qq.com/sns/jscode2session",
+      {
+        params: {
+          appid,
+          secret,
+          js_code: code,
+          grant_type: "authorization_code",
+        },
+      }
+    );
+    console.log(response.data);
+    return response.data;
   }
 }
 

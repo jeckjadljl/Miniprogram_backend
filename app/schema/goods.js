@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 21:44:14
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-15 16:44:59
+ * @LastEditTime: 2025-03-04 23:14:46
  * @FilePath: \Mini_program_backend\app\schema\goods.js
  * @Description:
  *
@@ -77,6 +77,21 @@ module.exports = app => {
       },
     },
     thumbnail: STRING(255), // 商品缩略图的 URL
+    carousel: {
+      type: TEXT,
+      get() {
+        // 将存储的逗号分隔的字符串转换为数组
+        const rawValue = this.getDataValue("carousel");
+        return rawValue ? rawValue.split(",") : [];
+      },
+      set(value) {
+        // 保存时将数组转换为逗号分隔的字符串
+        this.setDataValue(
+          "carousel",
+          Array.isArray(value) ? value.join(",") : value
+        );
+      },
+    },
     imagesJsonStr: STRING(2000), // 存储商品图片的 JSON 格式字符串
     version: {
       type: BIGINT,

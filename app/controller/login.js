@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 16:56:10
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-24 11:02:00
+ * @LastEditTime: 2025-03-06 21:54:19
  * @FilePath: \Mini_program_backend\app\controller\login.js
  * @Description:
  *
@@ -54,6 +54,13 @@ class LoginController extends Controller {
       userInfo,
     });
 
+    this.success(result);
+  }
+
+  async getOpenId() {
+    const { ctx } = this;
+    const { code } = ctx.request.body;
+    const result = await ctx.service.login.Login(code);
     this.success(result);
   }
 }

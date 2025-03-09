@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-18 22:48:53
+ * @LastEditTime: 2025-03-05 17:38:12
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -38,7 +38,7 @@ class ReferralService extends Service {
         where: { referrer_id: referrerId, membership_level: "junior" },
       });
 
-      rewardAmount = this.calculateJuniorReward(successfulReferrals);
+      rewardAmount = this.calculateRewardAmount(successfulReferrals);
       rewardDescription = `推荐分享会员 ${referredUserId} 的奖励`;
     } else if (membershipLevel === "premium") {
       rewardAmount = 200; // 推荐 3990 元资深会员
@@ -75,6 +75,36 @@ class ReferralService extends Service {
     if (position === 2) return 100; // 第三名奖励 100 元
 
     return 0; // 不在有效奖励范围
+  }
+
+  async getRefererCount(referrerId) {
+    const { Referrals } = this.ctx.model;
+    const result = await Referrals.countReferrals(referrerId);
+    return result;
+  }
+
+  async getReferrer(promotionCodeId) {
+    const { Qrcode } = this.ctx.model;
+    const getReferrer = await Qrcode.getReferrer({
+      promotionCodeId,
+      attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
+    });
+    if (!getReferrer) {
+      throw new Error("未找到推荐人ID");
+    }
+    return getReferrer;
+  }
+
+  async getReferred(referrerId) {
+    const { Referrals } = this.ctx.model;
+    const getReferred = await Referrals.getReferred({
+      referrerId,
+      attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
+    });
+    if (!getReferred) {
+      throw new Error("未找到扫码记录");
+    }
+    return getReferred;
   }
 
   async saveNew(referrerId, referredUserId) {
@@ -119,7 +149,7 @@ class ReferralService extends Service {
     throw new Error("该用户已有推荐关系，无法再与当前推荐人绑定关系");
   }
 
-  async generateMiniProgramCode(scene) {
+  async generateMiniProgramCode(referrerId) {
     const { ctx } = this;
     const { Qrcode } = ctx.model;
 
@@ -127,14 +157,16 @@ class ReferralService extends Service {
     const promotionCodeId = uuidv4().replace(/-/g, "").slice(0, 32);
 
     // 查询数据库是否存在该用户的二维码
-    const existingRecord = await Qrcode.get({ referrerId: scene });
+    const existingRecord = await Qrcode.get({ referrerId });
     if (existingRecord) {
       // 如果已存在，直接返回二维码记录
-      return { qrcodeBase64: existingRecord.qrcode };
+      return {
+        qrcodeUrl: existingRecord.qrcode,
+        promotionCode: existingRecord.promotion_code,
+      };
     }
 
     const accessToken = await ctx.service.jwt.getAccessToken(); // 获取 access_token
-    console.log(accessToken);
     const url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${accessToken}`;
 
     const requestData = {
@@ -147,17 +179,35 @@ class ReferralService extends Service {
     });
 
     if (response.headers["content-type"] === "image/jpeg") {
-      // 保存数据到数据库
-      // await Qrcode.saveNew({
-      //   referrerId: scene, // 确保传递正确的 referrerId
-      //   promotionCodeId,
-      //   qrcode: base64Image,
-      // });
+      try {
+        const fileBuffer = Buffer.from(response.data); // 转换为 Buffer
 
-      return {
-        qrcodebuffer: response.data, // 返回二维码的 Base64 格式
-        promotionCode: promotionCodeId,
-      };
+        // 为上传的二维码生成一个唯一的文件名
+        const fileName = `qrcode/${promotionCodeId}-${Date.now()}.jpeg`;
+
+        // 使用通用的上传文件方法
+        const avatarUrl = await ctx.service.cos.uploadFile(
+          fileBuffer,
+          fileName,
+          "",
+          ""
+        );
+
+        // 保存二维码记录到数据库（如果需要）
+        await Qrcode.saveNew({
+          referrerId, // 推广码关联的场景
+          promotionCodeId, // 推广码ID
+          qrcode: avatarUrl, // 存储在 COS 上的二维码 URL
+        });
+
+        return {
+          qrcodeUrl: avatarUrl, // 返回 COS 上二维码的 URL
+          promotionCode: promotionCodeId,
+        };
+      } catch (uploadError) {
+        console.error("上传二维码到 COS 失败:", uploadError);
+        throw new Error("Failed to upload QR code to COS.");
+      }
     }
     const error = JSON.parse(response.data.toString());
     throw new Error(`Failed to generate QR code: ${error.errmsg}`);

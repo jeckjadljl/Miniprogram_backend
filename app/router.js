@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-22 16:35:41
+ * @LastEditTime: 2025-03-07 00:45:53
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -17,6 +17,7 @@ module.exports = app => {
   const {
     home,
     login,
+    user,
     cart,
     goods,
     order,
@@ -28,6 +29,10 @@ module.exports = app => {
     deliveryTimeType,
     freightPlan,
     referral,
+    auth,
+    elements,
+    posters,
+    payments,
   } = controller;
 
   router.get("/", home.index);
@@ -35,8 +40,14 @@ module.exports = app => {
   /**
    * 微信小程序
    */
+
+  // 登录
   router.post("/login", login.login);
   router.post("/login/test", login.testlogin);
+  router.post("/login/getOpenId", login.getOpenId);
+
+  // 刷新Token
+  router.post("/auth/refreshToken", auth.refreshAccessToken);
 
   // 购物车
   router.post("/cart/addGoodsToCart", cart.addGoodsToCart);
@@ -49,7 +60,10 @@ module.exports = app => {
   // 商品数据
   router.get("/goods/getGoodsWithCategory", goods.getGoodsWithCategory);
   router.get("/goods/getGoodsList", goods.getGoodsList);
-  router.get("/goods/getGoodsById", goods.getGoodsById);
+  router.post("/goods/getGoodsById", goods.getGoodsById);
+
+  // 商品类别
+  router.get("/goodsCategory/getAll", goodsCategory.getAll);
 
   // 订单操作
   router.post("/order/queryOrderBill", order.queryOrderBill);
@@ -63,7 +77,7 @@ module.exports = app => {
 
   // 地址设置
   router.get("/address/getAddress", address.getAddress);
-  router.get("/address/getDefaultAddress", address.getDefaultAddress);
+  router.post("/address/getDefaultAddress", address.getDefaultAddress);
   router.post("/address/setDefaultAddress", address.setDefaultAddress);
   router.post("/address/deleteAddress", address.deleteAddress);
   router.get("/address/getAddressList", address.getAddressList);
@@ -74,12 +88,39 @@ module.exports = app => {
   router.post("/referral/getCode", referral.getCode);
   router.post("/referral/updataQRCode", referral.updataQRCode);
 
+  // 获取推荐人数
+  router.post("/referral/getRefererCount", referral.getRefererCount);
+
+  // 查询推荐人ID
+  router.post("/referral/getReferrer", referral.getReferrer);
+
+  // 查询被推荐人信息
+  router.post("/referral/getReferred", referral.getReferred);
+
   // 绑定推荐关系
   router.post("/referral/saveNew", referral.saveNew);
+
+  // 上传用户头像
+  router.post("/user/uploadAvatar", user.uploadAvatar);
+
+  // 健康四要素
+  router.post("/elements/saveNew", elements.saveNew);
+  router.get("/elements/getAll", elements.getAll);
+  router.post("/elements/get", elements.get);
+
+  // 上传海报
+  router.post("/posters/saveNew", posters.saveNew);
+
+  // 微信支付
+  router.post("/payments/createPayment", payments.createPayment);
+
+  // 微信支付回调消息
+  router.post("/notice/wechatPayCallback", notice.wechatPayCallback);
 
   /**
    * 管理端
    */
+  router.post("/auth/refreshAdminToken", auth.refreshAdminToken);
 
   router.post("/common/login", common.login);
   router.post("/common/savePasswordModify", common.savePasswordModify);

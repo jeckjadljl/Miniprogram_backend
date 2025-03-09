@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 17:11:45
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-22 17:22:37
+ * @LastEditTime: 2025-02-28 16:35:08
  * @FilePath: \Mini_program_backend\app\controller\cart.js
  * @Description:
  *
@@ -40,8 +40,12 @@ class CartController extends Controller {
 
   async removeGoodsFromCart() {
     const { ctx } = this;
-    const { userId, goodsId } = ctx.request.body;
-    const result = await ctx.service.cart.removeGoodsFromCart(userId, goodsId);
+    const { userId, goodsId, spec } = ctx.request.body;
+    const result = await ctx.service.cart.removeGoodsFromCart(
+      userId,
+      goodsId,
+      spec
+    );
     this.success(result);
   }
 

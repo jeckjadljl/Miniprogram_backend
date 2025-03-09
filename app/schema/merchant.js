@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-09 21:24:02
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-24 12:06:32
+ * @LastEditTime: 2025-02-16 10:51:33
  * @FilePath: \Mini_program_backend\app\schema\merchant.js
  * @Description:
  *
@@ -49,7 +49,7 @@ module.exports = app => {
       allowNull: false,
     },
     userType: {
-      type: ENUM("merchant", "employee"),
+      type: ENUM("admin", "merchant", "employee"),
       allowNull: false,
     },
     userName: {

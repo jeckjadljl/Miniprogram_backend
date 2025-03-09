@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-06 16:32:21
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-25 21:14:46
+ * @LastEditTime: 2025-03-01 12:15:44
  * @FilePath: \Mini_program_backend\app\model\user_roles.js
  * @Description:
  *
@@ -66,7 +66,7 @@ module.exports = app => {
         include: [
           {
             model: model.Role,
-            as: "role", // 根据关联的别名
+            as: "user_id", // 根据关联的别名
           },
         ],
       });
@@ -106,7 +106,8 @@ module.exports = app => {
         role_id: newRole.id,
       },
       defaults: {
-        created_at: new Date(),
+        user_id: userId,
+        role_id: newRole.id,
       },
     });
 

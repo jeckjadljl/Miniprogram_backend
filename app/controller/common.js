@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-13 12:25:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 17:34:01
+ * @LastEditTime: 2025-03-04 17:45:03
  * @FilePath: \Mini_program_backend\app\controller\common.js
  * @Description:
  *
@@ -29,11 +29,14 @@ class UserCommonController extends Controller {
 
     if (loginType === "admin") {
       // 根据userName获取管理员
-      user = await ctx.service.user.admin.getAdminByLogin(userName, password);
+      user = await ctx.service.admin.getAdminByLogin(userName, password);
     } else {
       // 根据userName获取商家
       user = await ctx.service.merchant.getMerchantByLogin(userName, password);
     }
+
+    console.log(`${loginType}${userName}登录`);
+    console.log("登录信息:", user);
 
     if (app._.isEmpty(user)) {
       return this.fail(ctx.ERROR_CODE, "账号或密码错误");
@@ -41,8 +44,15 @@ class UserCommonController extends Controller {
 
     const { uuid } = user;
     // 使用 JwtService 生成 Token
-    const result = await service.jwt.generateToken(uuid);
-    this.success(result);
+    const result = await service.jwt.generateAccessToken(uuid);
+    await ctx.service.redis.set(uuid, result.refresh_token, 86400, "token");
+    console.log(`${loginType}${uuid}登录成功`);
+    const UserData = {
+      token: result.token,
+      refresh_token: result.refresh_token,
+      user,
+    };
+    this.success(UserData);
   }
 
   async merchantRegister() {
@@ -67,7 +77,7 @@ class UserCommonController extends Controller {
       }
 
       // 使用 JwtService 生成 Token
-      const tokenData = await service.jwt.generateToken(newMerchant);
+      const tokenData = await service.jwt.generateToken(newMerchant.uuid);
       await service.redis.set(
         newMerchant,
         tokenData.token,
@@ -108,8 +118,13 @@ class UserCommonController extends Controller {
   async logout() {
     const { ctx, service } = this;
     const { user_id } = ctx.request.body;
-    await service.redis.del(user_id);
-    this.success();
+    try {
+      console.log(`${user_id}注销`);
+      await service.redis.del(user_id, "token");
+      this.success(user_id);
+    } catch (error) {
+      this.fail(ctx.ERROR_CODE, "注销失败");
+    }
   }
 
   /**

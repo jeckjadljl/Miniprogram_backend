@@ -149,7 +149,7 @@ class OrderController extends Controller {
 
   async getUserOrders() {
     const { ctx } = this;
-    const userId = ctx.request.body;
+    const { userId } = ctx.request.body;
     const result = await ctx.service.order.getUserOrders(userId);
     this.success(result);
   }

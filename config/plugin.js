@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-23 11:18:18
+ * @LastEditTime: 2025-03-04 11:43:03
  * @FilePath: \Mini_program_backend\config\plugin.js
  * @Description:
  *
@@ -37,6 +37,11 @@ module.exports = {
   validate: {
     enable: true,
     package: "egg-validate",
+  },
+
+  cors: {
+    enable: true,
+    package: "egg-cors",
   },
 
   io: {

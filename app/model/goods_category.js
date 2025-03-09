@@ -10,9 +10,13 @@ module.exports = app => {
   });
 
   GoodsCategory.associate = function () {
-    const { Goods, Merchant } = model;
+    const { Goods, Merchant, Elements } = model;
     GoodsCategory.hasMany(Goods, { foreignKey: "category_id" });
     GoodsCategory.belongsTo(Merchant, { foreignKey: "orgUuid" });
+    GoodsCategory.belongsTo(Elements, {
+      foreignKey: "elements_id",
+      as: "categories",
+    });
   };
 
   /**
@@ -31,10 +35,16 @@ module.exports = app => {
    * @return {string} - 类别uuid
    */
   GoodsCategory.saveModify = async goodsCategory => {
-    const { uuid, name, orgUuid, lastModifierId, lastModifierName } =
-      goodsCategory;
+    const {
+      uuid,
+      name,
+      elements_id,
+      orgUuid,
+      lastModifierId,
+      lastModifierName,
+    } = goodsCategory;
     const result = await GoodsCategory.update(
-      { name, lastModifierId, lastModifierName },
+      { name, elements_id, lastModifierId, lastModifierName },
       { where: { uuid, orgUuid } }
     );
 
@@ -110,6 +120,10 @@ module.exports = app => {
       attributes,
       where: { uuid, orgUuid },
     });
+  };
+
+  GoodsCategory.getAll = async ({ attributes }) => {
+    return await GoodsCategory.findAll({ attributes });
   };
 
   return GoodsCategory;

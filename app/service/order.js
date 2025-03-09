@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 17:23:38
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 11:45:42
+ * @LastEditTime: 2025-03-08 22:56:55
  * @FilePath: \Mini_program_backend\app\service\order.js
  * @Description:
  *
@@ -79,7 +79,7 @@ class OrderService extends Service {
         "order_status",
         "billNumber",
         "address_id",
-        "deliveryTimeTypeUuid",
+        "deliveryTimeType_id",
         "deliveryTimeTypeName",
         "deliveryTimeTypeRemark",
         "remark",
@@ -161,39 +161,39 @@ class OrderService extends Service {
       order_status: "initial",
     };
 
-    const goodsUuid = await Order.saveNew(params);
+    const orderUuid = await Order.saveNew(params);
 
-    if (goodsUuid) {
-      const current_balance = await User.addPoints(user_id, total_amount);
-      const point = await Points.add({
-        user_id,
-        total_amount,
-        source: "order",
-        current_balance,
-        description: `增加积分 ${total_amount}`,
-      });
+    if (orderUuid) {
+      // const current_balance = await User.addPoints(user_id, total_amount);
+      // const point = await Points.add({
+      //   user_id,
+      //   total_amount,
+      //   source: "order",
+      //   current_balance,
+      //   description: `增加积分 ${total_amount}`,
+      // });
 
-      if (!point) {
-        throw new Error("Failed to redeem points");
-      }
+      // if (!point) {
+      //   throw new Error("Failed to redeem points");
+      // }
 
-      // 更新user表中的积分余额
-      await User.cumulativeSpent(user_id, total_amount);
+      // // 更新user表中的积分余额
+      // await User.cumulativeSpent(user_id, total_amount);
 
-      await service.membership.checkAndUpgradeMembership(user_id);
+      // await service.membership.checkAndUpgradeMembership(user_id);
 
       // 超过30分钟自动取消订单
-      app.addDelayTask("cancelOrder", goodsUuid, {}, 1800);
+      app.addDelayTask("cancelOrder", orderUuid, {}, 1800);
 
       // 推送新订单消息
-      await service.notice.send("new_order", {
-        title: "新订单",
-        content: billNumber,
-        orgUuid,
-      });
+      // await service.notice.send("new_order", {
+      //   title: "新订单",
+      //   content: billNumber,
+      //   orgUuid,
+      // });
     }
 
-    return goodsUuid;
+    return orderUuid;
   }
 
   /**
@@ -202,7 +202,46 @@ class OrderService extends Service {
    * @return {Array} 用户订单列表
    */
   async getUserOrders(userId) {
-    return await this.app.model.Order.getUserOrders(userId);
+    const { app, ctx } = this;
+    const { Sequelize } = app;
+    const orderData = await app.model.Order.getUserOrders({
+      userId,
+      orderAttributes: [
+        "uuid",
+        "order_status",
+        [
+          Sequelize.fn("ROUND", Sequelize.col("total_amount"), 2),
+          "total_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("freight_amount"), 2),
+          "freight_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
+          "payment_amount",
+        ],
+      ],
+      orderLineAttributes: [
+        "uuid",
+        "thumbnail",
+        "unitName",
+        "name",
+        "goods_id",
+        "spec",
+        [Sequelize.fn("ROUND", Sequelize.col("salePrice"), 2), "salePrice"],
+        [
+          Sequelize.fn("0+CAST", Sequelize.literal("quantity AS CHAR")),
+          "quantity",
+        ],
+      ],
+    });
+
+    if (app._.isEmpty(orderData)) {
+      ctx.throw(200, "查询不到订单订单列表");
+    }
+
+    return orderData;
   }
 
   /**

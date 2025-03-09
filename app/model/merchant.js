@@ -20,7 +20,7 @@ module.exports = app => {
    */
   Merchant.saveNew = async merchant => {
     const result = await Merchant.create(merchant);
-    return result.uuid;
+    return result;
   };
 
   /**

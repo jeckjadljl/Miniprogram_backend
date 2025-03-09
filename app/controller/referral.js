@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-01-03 10:40:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-18 18:10:42
+ * @LastEditTime: 2025-03-05 17:38:04
  * @FilePath: \Mini_program_backend\app\controller\referral.js
  * @Description:
  *
@@ -23,17 +23,40 @@ class ReferralController extends Controller {
     this.success(result);
   }
 
+  async getRefererCount() {
+    const { ctx } = this;
+    const { referrerId } = ctx.request.body;
+    const result = await ctx.service.referral.getRefererCount(referrerId);
+    this.success(result);
+  }
+
+  async getReferrer() {
+    const { ctx } = this;
+    const { promotionCodeId } = ctx.request.body;
+    const result = await ctx.service.referral.getReferrer(promotionCodeId);
+    this.success(result);
+  }
+
+  async getReferred() {
+    const { ctx } = this;
+    const { referrerId } = ctx.request.body;
+    const result = await ctx.service.referral.getReferred(referrerId);
+    this.success(result);
+  }
+
   async getCode() {
     const { ctx } = this;
-    const { scene } = ctx.request.body;
+    const { referrerId } = ctx.request.body;
 
-    if (!scene) {
+    if (!referrerId) {
       ctx.throw(400, "缺少必要参数");
       return;
     }
 
     try {
-      const record = await ctx.service.referral.generateMiniProgramCode(scene);
+      const record = await ctx.service.referral.generateMiniProgramCode(
+        referrerId
+      );
       this.success(record);
     } catch (error) {
       ctx.logger.error("获取小程序码接口错误:", error);

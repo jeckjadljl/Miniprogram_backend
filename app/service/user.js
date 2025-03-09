@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:22:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 12:06:26
+ * @LastEditTime: 2025-02-02 19:50:55
  * @FilePath: \Mini_program_backend\app\service\user.js
  * @Description:
  *
@@ -36,11 +36,11 @@ class UserService extends Service {
     return user;
   }
 
-  async updateUser(openid, userData) {
+  async updateUser(uuid, userData) {
     const user = await this.ctx.model.User.update(userData, {
-      where: { openid },
+      where: { uuid },
     });
-    return user;
+    return user.uuid;
   }
 
   async deleteUser(openid) {
@@ -48,6 +48,13 @@ class UserService extends Service {
       where: { openid },
     });
     return result;
+  }
+
+  async findUserByUuid(uuid) {
+    const user = await this.ctx.model.User.findOne({
+      where: { uuid },
+    });
+    return user;
   }
 
   async findRole(roleName) {

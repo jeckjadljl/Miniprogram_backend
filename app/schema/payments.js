@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-09 21:48:53
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-25 10:54:26
+ * @LastEditTime: 2025-03-07 23:11:28
  * @FilePath: \Mini_program_backend\app\schema\payments.js
  * @Description:
  *
@@ -11,7 +11,7 @@
 "use strict";
 
 module.exports = app => {
-  const { STRING, DATE, UUIDV4, NOW, ENUM, BIGINT } = app.Sequelize;
+  const { STRING, DATE, UUIDV4, ENUM, BIGINT, JSON } = app.Sequelize;
 
   return {
     uuid: {
@@ -24,22 +24,65 @@ module.exports = app => {
       type: STRING(38),
       allowNull: false,
     },
-    transaction_id: STRING(38),
-    order_id: {
-      type: STRING(38),
+    transaction_id: {
+      type: STRING(32),
+      allowNull: true,
+    },
+    prepay_id: {
+      type: STRING(64), // 预支付交易会话标识
+      allowNull: true,
+    },
+    business_order_id: {
+      type: JSON, // 商户订单号，支持绑定多个订单
+      defaultValue: [],
       allowNull: false,
     },
-    orderBillNumber: STRING(38),
+    out_trade_no: {
+      type: STRING(32), // 商户订单号（与business_order_id一致）
+      allowNull: false,
+    },
     // "unpaid": 未支付, "paid": 已支付, "refunded": 已退款
-    payment_status: ENUM("unpaid", "paid", "refunded"),
+    payment_status: {
+      type: ENUM("unpaid", "paid", "refunded"),
+      defaultValue: "unpaid",
+    },
     payment_method: {
       type: STRING(32),
       allowNull: false,
     },
-    appId: STRING(38),
-    mchId: STRING(38),
-    openId: STRING(38),
-    payTime: DATE,
+    appId: {
+      type: STRING(32),
+      allowNull: false,
+    },
+    mchId: {
+      type: STRING(32),
+      allowNull: false,
+    },
+    openId: {
+      type: STRING(32),
+      allowNull: false,
+    },
+    trade_state: {
+      type: STRING(32), // 交易状态
+      allowNull: true,
+    },
+    trade_state_desc: {
+      type: STRING(255), // 交易状态描述
+      allowNull: true,
+    },
+    total_amount: {
+      type: BIGINT, // 订单金额（单位为分）
+      allowNull: false,
+    },
+    pay_time: DATE,
+    lastModifiedTime: {
+      type: DATE,
+      allowNull: false,
+    },
+    createdTime: {
+      type: DATE,
+      allowNull: false,
+    },
     version: {
       type: BIGINT,
       defaultValue: 0,

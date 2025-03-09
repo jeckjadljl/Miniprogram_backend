@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:07:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-24 11:48:10
+ * @LastEditTime: 2025-02-27 22:51:02
  * @FilePath: \Mini_program_backend\app\schema\orders.js
  * @Description:
  *
@@ -76,11 +76,11 @@ module.exports = app => {
     remark: STRING(255),
     deliveryTimeTypeName: {
       type: STRING(76),
-      allowNull: false,
+      allowNull: true,
     },
     deliveryTimeType_id: {
       type: STRING(38),
-      allowNull: false,
+      allowNull: true,
     },
     deliveryTimeTypeRemark: STRING(255),
     address_id: {

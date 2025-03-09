@@ -104,6 +104,19 @@ class GoodsCategoryService extends Service {
       ],
     });
   }
+
+  async getAll() {
+    const { app } = this;
+    return await app.model.GoodsCategory.getAll({
+      attributes: [
+        "uuid",
+        "version",
+        "name",
+        "createdTime",
+        "lastModifiedTime",
+      ],
+    });
+  }
 }
 
 module.exports = GoodsCategoryService;

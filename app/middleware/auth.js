@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-17 11:48:16
+ * @LastEditTime: 2025-03-08 22:55:39
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -15,29 +15,44 @@ module.exports = options => {
     const authHeader = ctx.request.header.authorization;
 
     // 判断是否为登录或刷新 token 的接口，如果是，直接放行
-    const exemptRoutes = ["/login", "/login/test", "/refresh-token", "/"];
-    const exemptPrefixes = [
-      "/goods",
-      "/cart",
-      "/address",
-      "/merchant",
-      "/goodsCategory",
-      "/order",
-      "/bill",
-      "/deliveryTimeType",
-      "/freightPlan",
-      "/referral",
-    ]; // 定义需要前缀匹配的路由
-    if (
-      exemptRoutes.includes(ctx.path) ||
-      exemptPrefixes.some(prefix => ctx.path.startsWith(prefix))
-    ) {
+    const exemptRoutes = [
+      "/login",
+      "/login/test",
+      "/login/getOpenId",
+      "/common/login",
+      "/auth/refreshToken",
+      "/auth/refreshAdminToken",
+      "/",
+      "/goods/getGoodsWithCategory",
+      "/goods/getGoodsList",
+      "/goods/getGoodsById",
+      "/goodsCategory/getAll",
+      "/referral/getReferrer",
+      "/referral/getReferred",
+      "/referral/saveNew",
+      "/user/uploadAvatar",
+      "/elements/saveNew",
+      "/elements/getAll",
+      "/elements/get",
+      "/posters/saveNew",
+      "/goodsCategory/saveModify",
+      "/payments/createOrder",
+      "/order/createBill",
+      "/merchant/register",
+      "/goods/query",
+      "/goods/saveNew",
+      "/goodsCategory/saveNew",
+      "/goods/saveModify",
+      "/order/getUserOrders",
+      "/bill/order/get",
+    ];
+    if (exemptRoutes.includes(ctx.path)) {
       await next();
       return;
     }
 
     if (!authHeader) {
-      ctx.status = 401;
+      ctx.status = 400;
       ctx.body = { message: "Access Token not provided" };
       return;
     }
@@ -48,42 +63,37 @@ module.exports = options => {
     try {
       // 验证 Access Token（JWT 自带有效期）
       const decoded = await ctx.service.jwt.verifyToken(token);
-
       if (!decoded) {
-        throw new Error("User token verification failed");
+        ctx.status = 401;
+        ctx.body = { message: "Invalid access token" };
+        return;
       }
 
-      const session_key = ctx.service.redis.get(decoded.uid);
-
+      const session_key = await ctx.service.redis.get(decoded.uid, "token");
       if (!session_key) {
         ctx.status = 401;
         ctx.body = { message: "Session expired, please log in again." };
         return;
       }
 
-      const refreshToken = await ctx.service.redis.get(decoded.uid);
-      console.log(refreshToken);
-      if (refreshToken) {
-        throw new Error("The refresh_token is Block! pleace to login");
+      // 续签 Access Token（如果即将过期）
+      const now = Math.floor(Date.now() / 1000);
+
+      if (decoded.exp - now < 10 * 60) {
+        // 10分钟内过期，刷新token
+        const newToken = await ctx.service.jwt.refreshAccessToken(
+          decoded.uid,
+          "token"
+        );
+        ctx.set("new-access-token", newToken); // 设置响应头
       }
-
-      const roles = ctx.service.role.getUserRoles(decoded.uid);
-
-      if (roles) {
-        throw new Error("The roles is not found");
-      }
-
-      const user = {
-        roles,
-        ...decoded,
-      };
 
       // 将用户信息附加到上下文
-      ctx.state.user = user;
-      ctx.state.token = token;
+      ctx.state.user = decoded;
       await next();
     } catch (err) {
-      throw err;
+      ctx.status = 401;
+      ctx.body = { message: "Unauthorized", error: err.message };
     }
   };
 };

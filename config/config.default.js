@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-13 11:02:24
+ * @LastEditTime: 2025-03-06 22:42:37
  * @FilePath: \Mini_program_backend\config\config.default.js
  * @Description:
  *
@@ -31,6 +31,16 @@ module.exports = appInfo => {
     REDIS_PORT,
     REDIS_HOST,
     NODEJS_PORT,
+    TENCENT_SECRET_ID,
+    TENCENT_SECRET_KEY,
+    TENCENT_BUCKET,
+    TENCENT_REGION,
+    WX_APPID,
+    WX_PAYMENTS_PRIVATEKEY_PATH,
+    WX_PAYMENTS_MCH_ID,
+    WX_PAYMENTS_SERIAL_NO,
+    WX_PAYMENTS_APIV3_KEY,
+    WX_NOTIFY_URL,
   } = process.env;
 
   config.cluster = {
@@ -154,9 +164,15 @@ module.exports = appInfo => {
 
   config.jwt = {
     expire: 7200, // 2小时
+    refresh_expire: 86400,
     secret: JWT_SECRET,
     // ignore: ["/api/registered", "/api/login"], // 哪些请求不需要认证
     // expiresIn: '24h',
+  };
+
+  config.cors = {
+    origin: "*", // 跨任何域
+    allowMethods: "GET,HEAD,PUT,POST,DELETE,PATCH,OPTIONS", // 被允许的请求方式
   };
 
   config.io = {
@@ -167,6 +183,28 @@ module.exports = appInfo => {
         packetMiddleware: [], // 数据包中间件（可选）
       },
     },
+  };
+
+  config.cos = {
+    SecretId: TENCENT_SECRET_ID, // 腾讯云 SecretId
+    SecretKey: TENCENT_SECRET_KEY, // 腾讯云 SecretKey
+    Bucket: TENCENT_BUCKET, // 存储桶名称
+    Region: TENCENT_REGION, // 存储区域
+  };
+
+  config.multipart = {
+    mode: "file",
+    fileExtensions: [".jpg", ".jpeg", ".png"], // 允许的上传文件类型
+  };
+
+  // config/config.default.js
+  config.wechatPay = {
+    mchId: WX_PAYMENTS_MCH_ID, // 商户号
+    privateKeyPath: WX_PAYMENTS_PRIVATEKEY_PATH, // API 私钥文件路径
+    serialNo: WX_PAYMENTS_SERIAL_NO, // 证书序列号
+    appId: WX_APPID, // 小程序AppID
+    apiV3Key: WX_PAYMENTS_APIV3_KEY, // API v3密钥
+    notify_url: WX_NOTIFY_URL,
   };
 
   return {

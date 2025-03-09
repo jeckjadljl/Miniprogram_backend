@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-09 17:09:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-13 11:16:32
+ * @LastEditTime: 2025-03-02 15:26:47
  * @FilePath: \Mini_program_backend\app\service\jwt.js
  * @Description:
  *
@@ -61,16 +61,39 @@ class JwtService extends Service {
   }
 
   // 刷新 access_token
-  async refreshAccessToken(token) {
-    const decode = this.app.jwt.decode(token);
-    const session_key = await this.ctx.service.redis.get(decode.uid);
+  async refreshAccessToken(uid, clientName) {
+    const session_key = await this.ctx.service.redis.get(uid, clientName);
 
     if (!session_key) {
-      throw new Error("Session expired, please log in again.");
+      throw new Error("Session expired!, bitch!");
     }
 
     // 如果 session_key 有效，则生成并返回新的 access_token
-    const newAccessToken = await this.generateToken(decode.uid);
+    const newAccessToken = await this.generateToken(uid);
+    return newAccessToken;
+  }
+
+  /**
+   * 管理端Token创建
+   * @param user
+   */
+  async generateAccessToken(user) {
+    const { secret, expire, refresh_expire } = this.config.jwt;
+    return {
+      token: await this.createToken(user, secret, expire),
+      refresh_token: await this.createToken(user, secret, refresh_expire),
+    };
+  }
+
+  async refreshAdminToken(uid, clientName) {
+    const session_key = await this.ctx.service.redis.get(uid, clientName);
+
+    if (!session_key) {
+      throw new Error("Session expired!, bitch!");
+    }
+
+    // 如果 session_key 有效，则生成并返回新的 access_token
+    const newAccessToken = await this.generateAccessToken(uid);
     return newAccessToken;
   }
 

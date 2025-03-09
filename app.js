@@ -2,13 +2,18 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-11 17:36:25
+ * @LastEditTime: 2025-03-03 10:18:09
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
  * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
  */
-const { v4: uuidv4 } = require("uuid");
+require("dotenv").config();
+// const fecha = require("fecha");
+// const { v4: uuidv4 } = require("uuid");
+const md5 = require("md5");
+
+const { ADMIN_USERNAME, ADMIN_PASSWORD } = process.env;
 
 class AppBootHook {
   constructor(app) {
@@ -36,6 +41,7 @@ class AppBootHook {
       UserRoles,
       RolePermissions,
       VoucherRules,
+      Admin, // 添加 Admin 模型引用
     } = this.app.model;
 
     // try {
@@ -102,20 +108,36 @@ class AppBootHook {
       }
     }
 
+    const [admin, adminCreated] = await Admin.findOrCreate({
+      where: { userName: ADMIN_USERNAME },
+      defaults: {
+        lastModifierName: "system",
+        lastModifierId: "system",
+        creatorName: "system",
+        creatorId: "system",
+        name: "超级管理员",
+        enableStatus: "enabled",
+        userType: "admin",
+        userName: ADMIN_USERNAME,
+        password: md5(ADMIN_PASSWORD), // 默认密码
+      },
+    });
+
+    if (adminCreated) {
+      this.app.logger.info("system 超级管理员 admin 创建成功");
+    }
+
     // 创建 admin 超级管理员用户
     const [adminUser, userCreated] = await User.findOrCreate({
-      where: { user_name: "admin" },
+      where: { user_name: ADMIN_USERNAME },
       defaults: {
-        uuid: uuidv4(),
         openid: "admin_openid", // 假设一个唯一的 openid
-        user_name: "admin",
+        user_name: ADMIN_USERNAME,
         avatar: "https://api.multiavatar.com/$%7Bctry_code%7D$%7Bmobile%7D.svg",
         phoneNumber: "13306047118", // 假设一个有效的手机号码
-        password: "admin", // 默认密码
+        password: md5(ADMIN_PASSWORD), // 默认密码
         desc: "超级管理员", // 描述
         lastLoginAt: new Date(), // 最近登录时间
-        createdAt: new Date(), // 创建时间
-        updatedAt: new Date(), // 最近修改时间
       },
     });
 

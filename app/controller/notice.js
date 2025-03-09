@@ -1,3 +1,13 @@
+/*
+ * @Author: caohanzhong 342292451@qq.com
+ * @Date: 2024-12-22 15:25:36
+ * @LastEditors: caohanzhong 342292451@qq.com
+ * @LastEditTime: 2025-02-27 11:50:23
+ * @FilePath: \Mini_program_backend\app\controller\notice.js
+ * @Description:
+ *
+ * Copyright (c) 2025 by ${git_name_email}, All Rights Reserved.
+ */
 "use strict";
 
 const Controller = require("../core/base_controller");
@@ -33,6 +43,15 @@ class NoticeController extends Controller {
     const { ctx } = this;
     const noticeData = await ctx.service.notice.query(ctx.request.body);
     this.success(noticeData);
+  }
+
+  async wechatPayCallback() {
+    const { ctx } = this;
+    // 获取微信支付回调的原始数据
+    const xmlData = ctx.request.body;
+    const result = await ctx.service.notice.wechatPayCallback(xmlData);
+
+    this.success(result);
   }
 }
 
