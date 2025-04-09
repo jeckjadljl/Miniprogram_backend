@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-22 15:46:58
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-27 15:02:04
+ * @LastEditTime: 2025-04-05 16:16:20
  * @FilePath: \Mini_program_backend\app\service\notice.js
  * @Description:
  *
@@ -11,6 +11,11 @@
 "use strict";
 
 const Service = require("egg").Service;
+const crypto = require("crypto");
+// const { promisify } = require("util");
+// const { XMLParser } = require("fast-xml-parser");
+// const aes256gcm = promisify(crypto.createCipheriv);
+// const aes256gcmDecrypt = promisify(crypto.aes256gcmDecrypt);
 
 /**
  * Service - 消息通知
@@ -62,92 +67,92 @@ class NoticeService extends Service {
   /**
    * 小程序端
    */
-  async wechatPayCallback(xmlData) {
-    const { ctx } = this;
+  async wechatPayCallback(params = {}) {
+    const { ctx, app } = this;
+    const { event_type, resource } = params;
+    const { apiV3Key } = app.config.wechatPay;
 
-    // 解析XML数据
-    const result = this.parseXml(xmlData);
-
-    if (!result) {
-      ctx.body = "签名验证失败";
-      ctx.status = 403;
-      return;
-    }
-
-    const { resource } = result;
-    // 验证签名
-    const isValid = await this.validateSignature(resource);
-    if (!isValid) {
-      ctx.body = "签名验证失败";
-      ctx.status = 403;
-      return;
-    }
-
-    // 处理支付结果
-    const { event_type, resource_type, content } = resource;
-    const paymentData = JSON.parse(content);
-
-    switch (event_type) {
-      case "TRANSACTION.SUCCESS":
-        await this.handlePaymentSuccess(paymentData);
-        break;
-      case "TRANSACTION.REFUND":
-        await this.handleRefund(paymentData);
-        break;
-      default:
-        ctx.body = "未知事件类型";
-        ctx.status = 400;
-        return;
-    }
-
-    // 返回成功响应
-    ctx.body = "OK";
-    ctx.status = 200;
-  }
-
-  // 解析XML数据
-  async parseXml(xmlData) {
-    const { parseString } = require("xml2js");
-    return new Promise((resolve, reject) => {
-      parseString(
-        xmlData,
-        { explicitArray: false, ignoreAttrs: true },
-        (err, result) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(result);
-          }
+    try {
+      if (event_type === "TRANSACTION.SUCCESS") {
+        console.log("resource:", resource);
+        if (
+          !resource ||
+          !resource.nonce ||
+          !resource.associated_data ||
+          !resource.ciphertext
+        ) {
+          throw new Error("缺少必要的加密参数");
         }
-      );
-    });
+
+        const key = Buffer.from(apiV3Key, "utf8");
+        const nonce = Buffer.from(resource.nonce, "utf8");
+        const associatedData = Buffer.from(resource.associated_data, "utf8");
+        const ciphertextBuffer = Buffer.from(resource.ciphertext, "base64");
+        const decipher = crypto.createDecipheriv("aes-256-gcm", key, nonce);
+        decipher.setAAD(associatedData);
+        const authTag = Buffer.from(
+          ciphertextBuffer.subarray(ciphertextBuffer.length - 16)
+        );
+        decipher.setAuthTag(authTag);
+        // 除去最后16个字节以外的字节作为加密数据
+        const encryptedData = Buffer.from(
+          ciphertextBuffer.subarray(0, ciphertextBuffer.length - 16)
+        );
+        // 调用update方法解密数据
+        let decrypted = decipher.update(encryptedData);
+        // 调用final方法指定编码格式为utf8
+        decrypted += decipher.final("utf8");
+        console.log(decrypted);
+
+        const paySucData = JSON.parse(decrypted);
+        // 处理支付结果
+        const result = await this.handlePaymentResult(paySucData);
+        return result;
+      }
+      console.log("未知事件类型:", event_type);
+      ctx.body = { error: "未知事件类型" };
+      ctx.status = 400;
+      return;
+    } catch (error) {
+      console.error("微信支付回调处理失败:", error);
+      ctx.body = { error: "处理失败" };
+      ctx.status = 500;
+      return;
+    }
+
+    // Todo: 后续增加退款方法等
+    // switch (event_type) {
+    //   case "TRANSACTION.SUCCESS":
+    //     await this.handlePaymentSuccess(paymentData);
+    //     break;
+    //   case "TRANSACTION.REFUND":
+    //     await this.handleRefund(paymentData);
+    //     break;
+    //   default:
+    //     ctx.body = "未知事件类型";
+    //     ctx.status = 400;
+    //     return;
+    // }
   }
 
-  // 验证签名
-  async validateSignature(resource) {
-    const { nonce_str, timestamp, signature } = resource;
-    const { apiV3Key } = this.app.config.wechatPay;
-
-    const message = `${nonce_str}\n${timestamp}\n${resource.resource}\n`;
-    const expectedSignature = crypto
-      .createHmac("sha256", apiV3Key)
-      .update(message)
-      .digest("hex");
-
-    return signature === expectedSignature;
-  }
-
-  // 处理支付成功
-  async handlePaymentSuccess(data) {
-    const { transaction_id, out_trade_no, trade_state, trade_state_desc } =
-      data;
+  // 处理支付结果
+  async handlePaymentResult(paymentData) {
+    const {
+      transaction_id,
+      out_trade_no,
+      trade_state,
+      trade_state_desc,
+      success_time,
+      payer,
+    } = paymentData;
     const paymentService = this.ctx.service.payments;
 
     // 更新本地订单状态
     await paymentService.updateOrderStatus(out_trade_no, {
       transaction_id,
-      payment_status: trade_state,
+      trade_state,
       trade_state_desc,
+      success_time,
     });
 
     this.ctx.logger.info(
@@ -171,6 +176,21 @@ class NoticeService extends Service {
     this.ctx.logger.info(
       `退款成功: 订单号 ${out_trade_no}, 交易状态: ${trade_state}, 描述: ${trade_state_desc}`
     );
+  }
+
+  async saveNewForWeapp(params = {}) {
+    const { app } = this;
+    return await app.model.NoticeForWeapp.saveNew(params);
+  }
+
+  async getNotice(params = {}) {
+    const { app } = this;
+    return await app.model.NoticeForWeapp.getNoticeOrMessage(params);
+  }
+
+  async getNoticeByElementsId(params = {}) {
+    const { app } = this;
+    return await app.model.NoticeForWeapp.getNoticeByElementsId(params);
   }
 }
 

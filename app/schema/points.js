@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-24 12:11:43
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-25 10:58:00
+ * @LastEditTime: 2025-03-16 17:02:25
  * @FilePath: \Mini_program_backend\app\schema\points.js
  * @Description:
  *
@@ -29,6 +29,10 @@ module.exports = app => {
       type: DECIMAL(10, 2),
       allowNull: false,
     },
+    points_image: {
+      type: STRING(255),
+      allowNull: true,
+    },
     current_balance: {
       type: DECIMAL(10, 2),
       allowNull: false,
@@ -39,6 +43,10 @@ module.exports = app => {
     },
     description: {
       type: STRING,
+    },
+    lastModifiedTime: {
+      type: DATE,
+      allowNull: false,
     },
     createdTime: {
       type: DATE,

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-15 16:46:15
+ * @LastEditTime: 2025-04-02 11:40:46
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -18,7 +18,16 @@ module.exports = app => {
   });
 
   Goods.associate = function () {
-    const { User, OrderItem, GoodsCategory, Merchant } = app.model;
+    const {
+      User,
+      OrderItem,
+      GoodsCategory,
+      Merchant,
+      MemberCard,
+      MemberGoods,
+      Posters,
+      GoodsSpecifications,
+    } = app.model;
     Goods.belongsToMany(User, {
       through: "Cart",
       foreignKey: "goods_id",
@@ -26,11 +35,18 @@ module.exports = app => {
     });
     Goods.hasMany(OrderItem, { foreignKey: "goods_id" });
     Goods.belongsTo(Merchant, { foreignKey: "orgUuid" });
+    Goods.hasMany(Posters, { foreignKey: "goods_id" });
+    Goods.hasMany(GoodsSpecifications, { foreignKey: "goods_id", as: "spec" });
 
     Goods.belongsTo(GoodsCategory, {
       foreignKey: "category_id", // 外键字段
       targetKey: "uuid", // 目标字段
       as: "category", // 关联别名
+    });
+    Goods.belongsToMany(MemberCard, {
+      through: MemberGoods,
+      foreignKey: "goods_id",
+      otherKey: "member_card_id",
     });
   };
 
@@ -40,8 +56,25 @@ module.exports = app => {
    * @return {string} - 类别uuid
    */
   Goods.saveNew = async goods => {
-    const result = await Goods.create(goods);
-    return result.goods_id;
+    return await app.transaction(async transaction => {
+      const result = await Goods.create(goods, { transaction });
+
+      const goodsSpec = goods.spec.map(item => ({
+        goods_id: result.goods_id,
+        specName: item.specName,
+        specValue: item.specValue,
+        specPrice: item.specPrice,
+        stock: item.stock || null,
+        specThumbnail: item.specThumbnail || null,
+        specImages: item.specImages || null,
+        specPosters: item.specPosters || null,
+        isDefault: item.isDefault,
+      }));
+
+      await model.GoodsSpecifications.bulkCreate(goodsSpec, { transaction });
+
+      return result.goods_id;
+    });
   };
 
   /**
@@ -133,18 +166,44 @@ module.exports = app => {
 
   /**
    * 查询商品
-   * @param {object} { uuid, orgUuid } - 条件
+   * @param {object} params - 条件
    * @return {object|null} - 查找结果
    */
-  Goods.get = async ({ goods_id, orgUuid }) => {
+  Goods.get = async params => {
+    const { goods_id, orgUuid } = params;
     if (!orgUuid) {
       return await Goods.findOne({
         where: { goods_id },
       });
     }
-    return await Goods.findOne({
+    const images = await model.Posters.findAll({
       where: { goods_id, orgUuid },
     });
+    const goodsInfo = await Goods.findOne({
+      where: { goods_id, orgUuid },
+      include: [
+        {
+          model: model.GoodsSpecifications,
+          attributes: [
+            "spec_id",
+            "goods_id",
+            "specName",
+            "specValue",
+            "specPrice",
+            "stock",
+            "specThumbnail",
+            "specImages",
+            "specPosters",
+            "isDefault",
+          ],
+          as: "spec",
+        },
+      ],
+    });
+    return {
+      goodsInfo,
+      images,
+    };
   };
 
   // 删除商品

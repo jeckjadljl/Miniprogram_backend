@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-28 15:40:15
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-31 12:21:16
+ * @LastEditTime: 2025-03-16 17:42:11
  * @FilePath: \Mini_program_backend\app\model\voucher_rules.js
  * @Description:
  *
@@ -18,12 +18,18 @@ module.exports = app => {
     tableName: "voucher_rules", // 对应数据库中的 'roles' 表
   });
 
-  VoucherRules.addRules = async ({ min_spend, deduction }) => {
-    const rules = await VoucherRules.create({
-      min_spend,
-      deduction,
+  VoucherRules.associate = function () {
+    const { User, Vouchers, OrderItem } = model;
+    VoucherRules.belongsToMany(User, {
+      through: Vouchers,
+      foreignKey: "voucher_id",
+      otherKey: "user_id",
     });
+    VoucherRules.hasMany(OrderItem, { foreignKey: "voucher_id" });
+  };
 
+  VoucherRules.saveNew = async params => {
+    const rules = await VoucherRules.create(params);
     return rules;
   };
 

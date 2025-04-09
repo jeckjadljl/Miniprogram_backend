@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-20 16:55:29
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-22 21:54:44
+ * @LastEditTime: 2025-03-23 18:17:42
  * @FilePath: \Mini_program_backend\app\schema\posters.js
  * @Description:
  *
@@ -11,7 +11,7 @@
 "use strict";
 
 module.exports = app => {
-  const { STRING, DATE, BIGINT, UUIDV4, ENUM } = app.Sequelize;
+  const { STRING, DATE, BIGINT, UUIDV4, ENUM, TEXT } = app.Sequelize;
 
   return {
     uuid: {
@@ -24,12 +24,28 @@ module.exports = app => {
       type: STRING(38),
       allowNull: true,
     },
+    goods_id: {
+      type: STRING(38),
+      allowNull: true,
+    },
     imageUrl: {
-      type: STRING(255),
+      type: TEXT,
       allowNull: false,
+      get() {
+        // 将存储的逗号分隔的字符串转换为数组
+        const rawValue = this.getDataValue("imageUrl");
+        return rawValue ? rawValue.split(",") : [];
+      },
+      set(value) {
+        // 保存时将数组转换为逗号分隔的字符串
+        this.setDataValue(
+          "imageUrl",
+          Array.isArray(value) ? value.join(",") : value
+        );
+      },
     },
     purpose: {
-      type: ENUM("home", "elements", "user"),
+      type: ENUM("home", "elements", "goods", "user"),
       allowNull: false,
     },
     purposeType: {

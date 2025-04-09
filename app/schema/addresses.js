@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 16:54:14
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-24 11:52:27
+ * @LastEditTime: 2025-03-25 11:26:04
  * @FilePath: \Mini_program_backend\app\schema\addresses.js
  * @Description:
  *
@@ -70,6 +70,10 @@ module.exports = app => {
     detail: {
       type: STRING(255), // 详细地址（街道、楼号等）
       allowNull: false,
+    },
+    address_tag: {
+      type: STRING(10),
+      allowNull: true,
     },
     is_default: {
       type: BOOLEAN,

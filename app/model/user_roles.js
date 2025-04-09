@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-06 16:32:21
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-01 12:15:44
+ * @LastEditTime: 2025-03-31 10:51:48
  * @FilePath: \Mini_program_backend\app\model\user_roles.js
  * @Description:
  *
@@ -17,6 +17,14 @@ module.exports = app => {
   const UserRoles = model.define("user_roles", userRolesSchema, {
     tableName: "user_roles", // 对应数据库中的 'user_roles' 表
   });
+
+  UserRoles.associate = function () {
+    const { Role } = model;
+    UserRoles.belongsTo(Role, {
+      foreignKey: "role_id", // 外键字段
+      as: "role", // 关联别名（需与 include 配置一致）
+    });
+  };
 
   UserRoles.add = async ({ userId, roleId }) => {
     // 确保 userId 和 roleId 是有效的
@@ -66,13 +74,13 @@ module.exports = app => {
         include: [
           {
             model: model.Role,
-            as: "user_id", // 根据关联的别名
+            as: "role", // 根据关联的别名
           },
         ],
       });
 
       // 提取角色的名称
-      const roleNames = roles.map(role => role.role.name);
+      const roleNames = roles.map(userRole => userRole.role.name);
 
       // 定义角色的优先级，从最高到最低
       const roleHierarchy = ["premium", "junior", "general", "user"];

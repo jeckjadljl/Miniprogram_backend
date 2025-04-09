@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:22:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-02 19:50:55
+ * @LastEditTime: 2025-04-07 11:57:07
  * @FilePath: \Mini_program_backend\app\service\user.js
  * @Description:
  *
@@ -24,7 +24,7 @@ class UserService extends Service {
     return user;
   }
 
-  async getUserByUid(uuid) {
+  async getUserByUuid(uuid) {
     const user = await this.ctx.model.User.findOne({ where: { uuid } });
     return user;
   }
@@ -61,6 +61,12 @@ class UserService extends Service {
     const { ctx } = this;
     const roles = await ctx.model.Role.findOne({ where: { roleName } });
     return roles;
+  }
+
+  async saveModify(params = {}) {
+    const { ctx } = this;
+    const result = await ctx.model.User.saveModify(params);
+    return result;
   }
 }
 

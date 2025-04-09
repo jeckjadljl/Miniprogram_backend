@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 18:15:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-07 18:33:00
+ * @LastEditTime: 2025-04-04 11:08:18
  * @FilePath: \Mini_program_backend\app\service\login.js
  * @Description:
  *
@@ -59,7 +59,7 @@ class LoginService extends Service {
             avatar: userInfo.avatarUrl, // 将 userInfo 中的 avatarUrl 对应到数据库的 avatar
           };
 
-          const getrole = await ctx.service.role.findRoleByName("user");
+          const getrole = await ctx.service.role.findRoleByName("general");
 
           const newUser = await ctx.service.user.addUser(userData);
           if (!newUser) {
@@ -96,6 +96,7 @@ class LoginService extends Service {
             token: token.token,
             session_key,
             user: filteredUser,
+            type: "register",
           };
         }
 
@@ -134,12 +135,14 @@ class LoginService extends Service {
             uuid: updatedUser.uuid,
             avatarUrl: updatedUser.avatar,
             nickName: updatedUser.user_name,
+            type: "login",
           };
 
           return {
             token: token.token,
             session_key,
             user: filteredUser,
+            type: "login",
           };
         }
 

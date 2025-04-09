@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-17 16:56:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-27 23:01:41
+ * @LastEditTime: 2025-03-21 11:58:29
  * @FilePath: \Mini_program_backend\app\extend\application.js
  * @Description:
  *
@@ -54,7 +54,7 @@ module.exports = {
 
   // 获取排序条件数组
   getSortInfo(sort) {
-    return _.isEmpty(sort) ? [["created_at", "DESC"]] : sort;
+    return _.isEmpty(sort) ? [["createdTime", "DESC"]] : sort;
   },
   // create所需的一些公共字段
   getCrateInfo(creatorId, creatorName) {

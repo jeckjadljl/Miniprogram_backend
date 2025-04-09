@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-28 12:01:09
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-11-30 10:41:11
+ * @LastEditTime: 2025-03-15 15:43:35
  * @FilePath: \Mini_program_backend\app\model\vouchers.js
  * @Description:
  *
@@ -18,10 +18,9 @@ module.exports = app => {
     tableName: "vouchers", // 对应数据库中的 'roles' 表
   });
 
-  // 在这里定义 belongsToMany 关联
-  Vouchers.associate = function () {
-    const { User } = model;
-    Vouchers.belongsTo(User, { foreignKey: "user_id" });
+  Vouchers.saveNew = async params => {
+    const voucher = await Vouchers.create(params);
+    return voucher.id;
   };
 
   Vouchers.findAll = async userId => {

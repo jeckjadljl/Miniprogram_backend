@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-22 15:25:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-27 11:50:23
+ * @LastEditTime: 2025-04-05 16:17:06
  * @FilePath: \Mini_program_backend\app\controller\notice.js
  * @Description:
  *
@@ -11,6 +11,7 @@
 "use strict";
 
 const Controller = require("../core/base_controller");
+const crypto = require("crypto");
 
 /**
  * Controller - 消息通知
@@ -45,13 +46,44 @@ class NoticeController extends Controller {
     this.success(noticeData);
   }
 
+  /**
+   * 微信小程序
+   */
   async wechatPayCallback() {
     const { ctx } = this;
-    // 获取微信支付回调的原始数据
-    const xmlData = ctx.request.body;
-    const result = await ctx.service.notice.wechatPayCallback(xmlData);
+    console.log(ctx.request.body);
+    try {
+      const result = await ctx.service.notice.wechatPayCallback(
+        ctx.request.body
+      );
+      this.success(result);
+    } catch (error) {
+      console.error("微信支付回调处理失败:", error);
+      ctx.body = { error: "处理失败" };
+      ctx.status = 500;
+    }
+  }
 
-    this.success(result);
+  async saveNewForWeapp() {
+    const { ctx } = this;
+    const noticeData = await ctx.service.notice.saveNewForWeapp(
+      ctx.request.body
+    );
+    this.success(noticeData);
+  }
+
+  async getNotice() {
+    const { ctx } = this;
+    const noticeData = await ctx.service.notice.getNotice(ctx.request.body);
+    this.success(noticeData);
+  }
+
+  async getNoticeByElementsId() {
+    const { ctx } = this;
+    const noticeData = await ctx.service.notice.getNoticeByElementsId(
+      ctx.request.body
+    );
+    this.success(noticeData);
   }
 }
 

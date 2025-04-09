@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:35:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-03 20:55:38
+ * @LastEditTime: 2025-04-07 12:11:27
  * @FilePath: \Mini_program_backend\app\controller\user.js
  * @Description:
  *
@@ -27,11 +27,31 @@ class UserController extends Controller {
     ctx.body = user;
   }
 
+  async getUserByName() {
+    const { ctx } = this;
+    const { userName } = ctx.request.body;
+    const user = await ctx.service.user.getUserByName(userName);
+    this.success(user);
+  }
+
   async updateUser() {
     const { ctx } = this;
     const { uuid, userData } = ctx.request.body;
     const result = await ctx.service.user.updateUser(uuid, userData);
     this.success(result);
+  }
+
+  async saveModify() {
+    const { ctx } = this;
+    const result = await ctx.service.user.saveModify(ctx.request.body);
+    this.success(result);
+  }
+
+  async getUserByUuid() {
+    const { ctx } = this;
+    const { uuid } = ctx.request.body;
+    const user = await ctx.service.user.getUserByUuid(uuid);
+    this.success(user);
   }
 
   // 上传用户头像

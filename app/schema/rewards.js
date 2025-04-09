@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 17:04:41
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-25 11:04:51
+ * @LastEditTime: 2025-03-10 18:24:31
  * @FilePath: \Mini_program_backend\app\schema\rewards.js
  * @Description:
  *
@@ -27,6 +27,10 @@ module.exports = app => {
     },
     description: {
       type: STRING,
+    },
+    lastModifiedTime: {
+      type: DATE,
+      allowNull: false,
     },
     createdTime: {
       type: DATE,

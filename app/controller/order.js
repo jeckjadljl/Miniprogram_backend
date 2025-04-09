@@ -147,10 +147,12 @@ class OrderController extends Controller {
     this.success(uuid);
   }
 
+  /**
+   * 获取订单项列表
+   */
   async getUserOrders() {
     const { ctx } = this;
-    const { userId } = ctx.request.body;
-    const result = await ctx.service.order.getUserOrders(userId);
+    const result = await ctx.service.order.getUserOrders(ctx.request.body);
     this.success(result);
   }
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-08 22:55:39
+ * @LastEditTime: 2025-04-07 23:14:44
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -43,8 +43,30 @@ module.exports = options => {
       "/goods/saveNew",
       "/goodsCategory/saveNew",
       "/goods/saveModify",
-      "/order/getUserOrders",
+      "/goods/get",
       "/bill/order/get",
+      "/member/test/saveNew",
+      "/membership/saveNew",
+      "/membership/getAll",
+      "/permissions/saveNew",
+      "/memberPrivileges/saveNew",
+      "/memberPrivileges/getAll",
+      "/memberGoods/getGoodsByCardId",
+      "/memberGoods/saveNew",
+      "/user/saveModify",
+      "/user/getUserByName",
+      "/voucher_rules/saveNew",
+      "/notice/wechatPayCallback",
+      "/bill/order/query",
+      "/posters/getHomeCarousel",
+      "/address/saveNewAddress",
+      "/referral/getRefererCount",
+      "/membership/upgradeMembershipLevel",
+      "/payments/queryOrder",
+      "/notice/saveNewForWeapp",
+      "/notice/getNotice",
+      "/notice/getNoticeByElementsId",
+      "/memberGoods/getMemberGoodsList",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

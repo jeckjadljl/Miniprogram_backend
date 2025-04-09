@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:27:25
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-07 10:07:21
+ * @LastEditTime: 2025-04-06 18:16:50
  * @FilePath: \Mini_program_backend\app\model\cart.js
  * @Description:
  *
@@ -94,6 +94,24 @@ module.exports = app => {
             "thumbnail",
             "goodsInfo",
             "orgUuid",
+          ],
+          include: [
+            {
+              model: model.GoodsSpecifications,
+              as: "spec",
+              attributes: [
+                "spec_id",
+                "goods_id",
+                "specName",
+                "specValue",
+                "specPrice",
+                "stock",
+                "specThumbnail",
+                "specImages",
+                "specPosters",
+                "isDefault",
+              ],
+            },
           ],
         },
       ],

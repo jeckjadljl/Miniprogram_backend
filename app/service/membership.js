@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 10:46:44
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-17 16:37:03
+ * @LastEditTime: 2025-04-04 16:37:31
  * @FilePath: \Mini_program_backend\app\service\membership.js
  * @Description:
  *
@@ -12,8 +12,10 @@
 
 const Service = require("egg").Service;
 
+const TestMemberCard = require("../utils/testMemberCard");
+
 class MembershipService extends Service {
-  async checkAndUpgradeMembership(userId) {
+  async checkAndUpgradeMembership(userId, total_amount) {
     try {
       const { User, Order, Referrals, Role, UserRoles } = this.ctx.model;
       const user = await User.findByPk(userId, {
@@ -31,21 +33,20 @@ class MembershipService extends Service {
 
       console.log(`用户 ${userId} 的总消费金额为：${totalSpent}`);
 
-      // 查询用户是否已支付 3990 元
-      const hasPaid3990 = await Order.findOne({
-        where: { user_id: userId, total_amount: 3990 },
-      });
-
       // 定义会员等级的映射规则
       const membershipLevels = [
-        { level: "general", condition: totalSpent >= 168 },
-        { level: "junior", condition: totalSpent >= 298 },
+        // { level: "general", condition: totalSpent >= 168 },
+        // {
+        //   level: "junior",
+        //   condition:
+        //     totalSpent >= 298 || (await Referrals.countReferrals(userId)) >= 3,
+        // },
         {
           level: "premium",
           condition: async () =>
             totalSpent >= 3000 ||
-            hasPaid3990 ||
-            (await Referrals.countReferrals(userId)) >= 15,
+            total_amount === 3990 ||
+            (await Referrals.countReferrals(userId)) >= 30,
         },
       ];
 
@@ -55,18 +56,41 @@ class MembershipService extends Service {
           typeof condition === "function" ? await condition() : condition;
         if (shouldUpgrade && !user.roles.some(role => role.name === level)) {
           await UserRoles.addMembershipRole(user.uuid, level);
-          await this.ctx.service.referral.distributeReferralReward(
-            userId,
-            level
-          );
+          // await this.ctx.service.referral.distributeReferralReward(
+          //   userId,
+          //   level
+          // );
         }
       }
 
-      return user;
+      // 获取更新后的最高会员等级
+      const updatedLevel = await UserRoles.getUserHighestRole(userId);
+
+      return {
+        user,
+        memberLevel: updatedLevel, // 直接使用获取到
+      };
     } catch (error) {
       this.ctx.logger.error(`升级会员等级时发生错误: ${error.message}`);
       throw new Error("会员等级升级失败，请稍后重试");
     }
+  }
+
+  async saveNew(params = {}) {
+    const { ctx } = this;
+    const testMemberCard = new TestMemberCard(ctx);
+    const result = await testMemberCard.createMembershipCard(params);
+    return result;
+  }
+
+  async getMembershipLevel(userId) {
+    const { app } = this;
+    const { UserRoles } = app.model;
+    const level = UserRoles.getUserHighestRole(userId);
+    if (!level) {
+      throw new Error("用户未设置会员等级");
+    }
+    return level;
   }
 }
 

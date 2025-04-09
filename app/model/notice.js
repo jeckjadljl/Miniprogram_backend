@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-23 10:35:45
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-23 10:37:11
+ * @LastEditTime: 2025-04-05 11:05:01
  * @FilePath: \Mini_program_backend\app\model\notice.js
  * @Description:
  *

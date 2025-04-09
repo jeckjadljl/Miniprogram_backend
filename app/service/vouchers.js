@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-28 16:07:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-11-30 10:37:01
+ * @LastEditTime: 2025-03-15 10:04:42
  * @FilePath: \Mini_program_backend\app\service\vouchers.js
  * @Description:
  *
@@ -11,8 +11,28 @@
 "use strict";
 
 const Service = require("egg").Service;
+const fecha = require("fecha");
+const fs = require("fs");
+const path = require("path");
 
 class VouchersService extends Service {
+  async saveNew(params = {}) {
+    const { Vouchers } = this.ctx.model;
+
+    // 修改选中代码部分
+    const now = new Date();
+    const endDate = new Date(now);
+    endDate.setFullYear(now.getFullYear() + 1);
+
+    const vouchersData = {
+      ...params,
+      start_date: fecha.format(now, "YYYY-MM-DD HH:mm:ss"),
+      end_date: fecha.format(endDate, "YYYY-MM-DD HH:mm:ss"),
+    };
+    const voucher = await Vouchers.saveNew(vouchersData);
+    return voucher;
+  }
+
   async useVoucher(userId, voucherId, orderAmount) {
     const { Vouchers, VoucherRule } = this.ctx.model;
     // 查询用户的抵用券

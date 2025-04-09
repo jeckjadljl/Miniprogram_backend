@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 21:44:14
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-04 23:14:46
+ * @LastEditTime: 2025-04-01 23:31:52
  * @FilePath: \Mini_program_backend\app\schema\goods.js
  * @Description:
  *
@@ -59,23 +59,26 @@ module.exports = app => {
       type: STRING(76),
       allowNull: false,
     }, // 商品的计量单位名称
-    salePrice: DECIMAL,
-    goodsInfo: TEXT,
-    spec: {
-      type: STRING(255),
-      get() {
-        // 将存储的逗号分隔的字符串转换为数组
-        const rawValue = this.getDataValue("spec");
-        return rawValue ? rawValue.split(",") : [];
-      },
-      set(value) {
-        // 保存时将数组转换为逗号分隔的字符串
-        this.setDataValue(
-          "spec",
-          Array.isArray(value) ? value.join(",") : value
-        );
-      },
+    salePrice: {
+      type: DECIMAL(10, 2),
+      allowNull: false,
     },
+    goodsInfo: TEXT,
+    // spec: {
+    //   type: STRING(255),
+    //   get() {
+    //     // 将存储的逗号分隔的字符串转换为数组
+    //     const rawValue = this.getDataValue("spec");
+    //     return rawValue ? rawValue.split(",") : [];
+    //   },
+    //   set(value) {
+    //     // 保存时将数组转换为逗号分隔的字符串
+    //     this.setDataValue(
+    //       "spec",
+    //       Array.isArray(value) ? value.join(",") : value
+    //     );
+    //   },
+    // },
     thumbnail: STRING(255), // 商品缩略图的 URL
     carousel: {
       type: TEXT,

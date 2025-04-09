@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-09 21:48:53
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-07 23:11:28
+ * @LastEditTime: 2025-03-17 18:12:12
  * @FilePath: \Mini_program_backend\app\schema\payments.js
  * @Description:
  *
@@ -36,6 +36,28 @@ module.exports = app => {
       type: JSON, // 商户订单号，支持绑定多个订单
       defaultValue: [],
       allowNull: false,
+      validate: {
+        isValidArray(value) {
+          if (
+            !Array.isArray(value) ||
+            !value.every(v => typeof v === "string")
+          ) {
+            throw new Error("business_order_id必须为字符串数组");
+          }
+        },
+      },
+      get() {
+        // 确保读取时返回数组
+        const value = this.getDataValue("business_order_id");
+        return Array.isArray(value) ? value : [];
+      },
+      set(value) {
+        // 存储时统一为数组格式
+        this.setDataValue(
+          "business_order_id",
+          Array.isArray(value) ? value : [value]
+        );
+      },
     },
     out_trade_no: {
       type: STRING(32), // 商户订单号（与business_order_id一致）

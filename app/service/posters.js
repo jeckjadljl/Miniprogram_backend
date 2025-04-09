@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-22 22:02:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-24 10:08:14
+ * @LastEditTime: 2025-03-23 23:42:33
  * @FilePath: \Mini_program_backend\app\service\posters.js
  * @Description:
  *
@@ -34,7 +34,22 @@ class PostersService extends Service {
           throw new Error("elements is not fund");
         }
       }
-      if (Posters.imageUrl && fs.existsSync(Posters.imageUrl)) {
+      if (Posters.imageUrl && Array.isArray(Posters.imageUrl)) {
+        Posters.imageUrl.forEach((imageUrlItem, index) => {
+          if (fs.existsSync(imageUrlItem)) {
+            const imageUrlBuffer = fs.readFileSync(imageUrlItem);
+            const imageUrlKey = `${purposeType}/${path.basename(imageUrlItem)}`; // 存储路径
+            uploadPromises.push(
+              ctx.service.cos
+                .uploadFile(imageUrlBuffer, imageUrlKey, "", "")
+                .then(url => {
+                  console.log("COS返回的URL:", url); // 添加日志
+                  Posters.imageUrl[index] = url;
+                })
+            );
+          }
+        });
+      } else if (Posters.imageUrl && fs.existsSync(Posters.imageUrl)) {
         const imageUrlBuffer = fs.readFileSync(Posters.imageUrl);
         const imageUrlKey = `${purposeType}/${path.basename(Posters.imageUrl)}`; // 存储路径
 
@@ -70,6 +85,12 @@ class PostersService extends Service {
       uuid,
       orgUuid,
     });
+    return result;
+  }
+
+  async getHomeCarousel() {
+    const { app } = this;
+    const result = await app.model.Posters.getHomeCarousel();
     return result;
   }
 }

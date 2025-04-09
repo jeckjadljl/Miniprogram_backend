@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 17:23:38
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-08 22:56:55
+ * @LastEditTime: 2025-03-27 12:28:16
  * @FilePath: \Mini_program_backend\app\service\order.js
  * @Description:
  *
@@ -138,77 +138,82 @@ class OrderService extends Service {
    * @param userName
    * @return {Object} 创建的订单实例
    */
-  async saveNew(orgUuid, goodsOrder = {}, user_id, userName) {
-    const { service, app } = this;
-    const { Order, Points, User } = app.model;
-    const { total_amount } = goodsOrder;
-    const user = await User.findByPk(user_id);
+  async saveNew(goodsOrder = {}) {
+    const { app, ctx } = this;
+    const { Order, User } = app.model;
+    const { address_id, user_id, userName, ordersList = [] } = goodsOrder;
+    console.log("订单数据:", goodsOrder);
+    console.log("用户的uuid:", user_id);
+    const user = await ctx.service.user.getUserByUuid(user_id);
     if (!user) {
       this.ctx.throw(404, `用户不存在，ID: ${user_id}`);
     }
 
-    // 获取创建信息和账单号
+    // 获取创建信息
     const crateInfo = app.getCrateInfo(user_id, userName);
-    const billNumber = await app.getBillNumber("DG");
 
-    const params = {
-      ...goodsOrder,
-      ...crateInfo,
-      billNumber,
-      orgUuid,
-      user_id,
-      userName,
-      order_status: "initial",
-    };
-
-    const orderUuid = await Order.saveNew(params);
-
-    if (orderUuid) {
-      // const current_balance = await User.addPoints(user_id, total_amount);
-      // const point = await Points.add({
-      //   user_id,
-      //   total_amount,
-      //   source: "order",
-      //   current_balance,
-      //   description: `增加积分 ${total_amount}`,
-      // });
-
-      // if (!point) {
-      //   throw new Error("Failed to redeem points");
-      // }
-
-      // // 更新user表中的积分余额
-      // await User.cumulativeSpent(user_id, total_amount);
-
-      // await service.membership.checkAndUpgradeMembership(user_id);
-
-      // 超过30分钟自动取消订单
-      app.addDelayTask("cancelOrder", orderUuid, {}, 1800);
-
-      // 推送新订单消息
-      // await service.notice.send("new_order", {
-      //   title: "新订单",
-      //   content: billNumber,
-      //   orgUuid,
-      // });
+    // 计算所有订单的总金额
+    function calculateTotalAmount(ordersList) {
+      return ordersList.reduce((sum, order) => sum + order.total_amount, 0);
     }
 
-    return orderUuid;
+    const totalAmount = calculateTotalAmount(ordersList);
+    console.log(`所有订单的总金额: ${totalAmount}`);
+
+    await User.cumulativeSpent(user_id, totalAmount);
+
+    // 处理每个订单
+    const orderUuids = [];
+    for (const order of ordersList) {
+      const billNumber = await app.getBillNumber("DG");
+
+      // 构建订单数据
+      const processedOrder = {
+        ...order,
+        billNumber,
+        ...crateInfo,
+        address_id,
+        user_id,
+        userName,
+        order_status: "initial",
+      };
+
+      const orderUuid = await Order.saveNew(processedOrder);
+      if (orderUuid) {
+        orderUuids.push(orderUuid);
+        // 超过30分钟自动取消订单
+        app.addDelayTask("cancelOrder", orderUuid, {}, 1800);
+        // 推送新订单消息
+        // await service.notice.send("new_order", {
+        //   title: "新订单",
+        //   content: billNumber,
+        //   orgUuid,
+        // });
+      }
+    }
+
+    return {
+      user_id,
+      openid: user.openid,
+      totalAmount,
+      orderUuids,
+    };
   }
 
   /**
    * 查询用户订单列表
-   * @param {String} userId - 用户ID
+   * @param {String} params - 请求参数
    * @return {Array} 用户订单列表
    */
-  async getUserOrders(userId) {
+  async getUserOrders(params = {}) {
     const { app, ctx } = this;
     const { Sequelize } = app;
     const orderData = await app.model.Order.getUserOrders({
-      userId,
+      ...params,
       orderAttributes: [
         "uuid",
         "order_status",
+        "orgUuid",
         [
           Sequelize.fn("ROUND", Sequelize.col("total_amount"), 2),
           "total_amount",
@@ -234,6 +239,12 @@ class OrderService extends Service {
           Sequelize.fn("0+CAST", Sequelize.literal("quantity AS CHAR")),
           "quantity",
         ],
+        "member_card_name",
+        "member_card_images",
+        "member_packs_name",
+        "voucher_name",
+        "voucher_quantity",
+        "points",
       ],
     });
 
@@ -324,6 +335,37 @@ class OrderService extends Service {
       ...modifyInfo,
       orgUuid,
     });
+  }
+
+  async getOrderFromPayments(params = {}) {
+    const { app, ctx } = this;
+    const { Sequelize } = app;
+    const orderData = await app.model.Order.getOrderFromPayments({
+      ...params,
+      orderAttributes: [
+        "uuid",
+        "order_status",
+        [
+          Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
+          "payment_amount",
+        ],
+      ],
+      orderLineAttributes: [
+        "uuid",
+        "voucher_id",
+        "voucher_name",
+        "voucher_image",
+        "voucher_type",
+        "voucher_quantity",
+        "points",
+      ],
+    });
+
+    if (app._.isEmpty(orderData)) {
+      ctx.throw(200, "查询不到订单订单列表");
+    }
+
+    return orderData;
   }
 }
 

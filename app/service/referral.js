@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-05 17:38:12
+ * @LastEditTime: 2025-04-07 17:01:18
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -15,48 +15,90 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
 class ReferralService extends Service {
-  async distributeReferralReward(referredUserId, membershipLevel) {
-    const { Referrals, Rewards, User } = this.ctx.model;
-    // 查询推荐关系
-    const referral = await Referrals.findReferred(referredUserId);
-    if (!referral) return; // 没有推荐关系
+  async distributeReferralReward(user_id, items, membershipLevel) {
+    const { Referrals, Rewards, User, UserRoles, Order } = this.ctx.model;
+    // 查询直接推荐关系
+    const directReferral = await Referrals.findReferred(user_id);
+    if (!directReferral) return; // 没有推荐关系
+    const directReferrerId = directReferral.referrer_id;
 
-    // 获取推荐人信息
-    const referrerId = referral.referrer_id;
-    // const referrer = await this.ctx.model.User.findByPk(referrerId);
+    const upperReferral = await Referrals.findReferred(directReferrerId);
+    // 获取上级推荐人信息
+    const upperReferrerId = upperReferral.referrer_id;
 
-    // 计算奖励金额
-    let rewardAmount = 0;
-    let rewardDescription = "";
-
-    // 根据被推荐人的会员等级发放奖励
-    if (membershipLevel === "general") {
-      rewardAmount = 50; // 严选会员推荐奖励
-      rewardDescription = `推荐严选会员 ${referredUserId} 的奖励`;
-    } else if (membershipLevel === "junior") {
-      const successfulReferrals = await Referrals.count({
-        where: { referrer_id: referrerId, membership_level: "junior" },
+    // 会员卡固定返佣逻辑
+    if (membershipLevel === "member_card") {
+      const fixedReward = 9.9;
+      await User.addBalance(user_id, fixedReward);
+      await Rewards.createReward({
+        userId: user_id,
+        amount: fixedReward,
+        description: `会员卡推荐 ${user_id} 的固定奖励`,
       });
-
-      rewardAmount = this.calculateRewardAmount(successfulReferrals);
-      rewardDescription = `推荐分享会员 ${referredUserId} 的奖励`;
-    } else if (membershipLevel === "premium") {
-      rewardAmount = 200; // 推荐 3990 元资深会员
-      rewardDescription = `推荐资深会员 ${referredUserId} 的奖励`;
+      this.logger.info(
+        `会员卡固定奖励发放成功，获取人: ${user_id}, 奖励金额: ${fixedReward}`
+      );
+      return;
     }
 
-    // 发放奖励
-    if (rewardAmount > 0) {
-      await User.addBalance(rewardAmount);
+    // 初始化佣金统计
+    let totalDirectReward = 0;
+    let totalUpperReward = 0;
 
+    // 遍历所有商品项计算佣金
+    for (const { item, goods } of items) {
+      const { salePrice } = item;
+      const categoryName = goods?.categoryName || "";
+
+      const getdirLevel = await UserRoles.getMembershipLevel(directReferrerId);
+
+      // 运动装备特殊分佣逻辑
+      if (categoryName === "运动装备") {
+        if (salePrice === 298) {
+          totalDirectReward += 88;
+          totalUpperReward += salePrice * 0.19;
+        } else if (salePrice === 168) {
+          totalDirectReward += 50;
+          totalUpperReward += salePrice * 0.19;
+        }
+        totalDirectReward += salePrice * 0.05;
+        totalUpperReward += salePrice * 0.03;
+      } else if (getdirLevel === "premium") {
+        totalDirectReward += salePrice * 0.08; // 直接推荐人奖励
+        totalUpperReward += salePrice * 0.05; // 上级推荐人奖励
+      } else {
+        // 普通商品分佣逻辑
+        totalDirectReward += salePrice * 0.05;
+        totalUpperReward += salePrice * 0.03;
+      }
+    }
+
+    // 获取直接推荐人信息
+
+    // 存入直接推荐佣金
+    if (totalDirectReward > 0) {
+      await User.addBalance(directReferrerId, totalDirectReward);
       await Rewards.createReward({
-        userId: referrerId,
-        amount: rewardAmount,
-        description: rewardDescription,
+        userId: directReferrerId,
+        amount: totalDirectReward,
+        description: `直接推荐 ${user_id} 的奖励`,
       });
-
       this.logger.info(
-        `推荐奖励发放成功，推荐人: ${referrerId}, 奖励金额: ${rewardAmount}`
+        `直接推荐奖励发放成功，推荐人: ${directReferrerId}, 奖励金额: ${totalDirectReward}`
+      );
+    }
+
+    // 查询上级推荐关系
+    if (upperReferral && totalUpperReward > 0) {
+      // 存入上级推荐佣金
+      await User.addBalance(upperReferrerId, totalUpperReward);
+      await Rewards.createReward({
+        userId: upperReferrerId,
+        amount: totalUpperReward,
+        description: `间接推荐 ${user_id} 的奖励`,
+      });
+      this.logger.info(
+        `间接推荐奖励发放成功，推荐人: ${upperReferrerId}, 奖励金额: ${totalUpperReward}`
       );
     }
   }
@@ -108,7 +150,8 @@ class ReferralService extends Service {
   }
 
   async saveNew(referrerId, referredUserId) {
-    const { Referrals, UserRoles } = this.ctx.model;
+    const { ctx } = this;
+    const { Referrals, UserRoles } = ctx.model;
 
     const referrerL1 = await Referrals.findReferred({
       referredUserId,
@@ -128,6 +171,12 @@ class ReferralService extends Service {
         console.log(
           `用户 ${referredUserId} 已与他的团队长${referrerL2.referrer_id}绑定关系`
         );
+
+        // 给上级推荐人发放5个健康币
+        await ctx.service.points.saveNew({
+          user_id: referrerL2.referrer_id,
+          points: 5,
+        });
       }
 
       const result = await Referrals.saveNew({
@@ -135,6 +184,13 @@ class ReferralService extends Service {
         referredUserId,
         referralLevel: 1,
       });
+
+      // 给直接推荐人发放50个健康币
+      await ctx.service.points.saveNew({
+        user_id: referrerId,
+        points: 50,
+      });
+      // 获取直接推荐人角色
       const getaReferrerRole = await UserRoles.getUserHighestRole(referrerId);
 
       return {

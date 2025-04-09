@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-22 17:03:53
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-05 17:37:55
+ * @LastEditTime: 2025-03-31 10:24:07
  * @FilePath: \Mini_program_backend\app\model\referrals.js
  * @Description:
  *
@@ -59,7 +59,7 @@ module.exports = app => {
 
   Referrals.countReferrals = async referrerId => {
     return await Referrals.count({
-      where: { referrer_id: referrerId },
+      where: { referrer_id: referrerId, level: "1" },
     });
   };
 

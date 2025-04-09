@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-02 14:46:48
+ * @LastEditTime: 2025-03-17 22:14:18
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -32,6 +32,10 @@ module.exports = app => {
       Vouchers,
       UserRoles,
       Qrcode,
+      MemberCard,
+      MemberCardRecord,
+      VoucherRules,
+      Payments,
     } = model;
     User.belongsToMany(Role, {
       through: UserRoles,
@@ -58,7 +62,23 @@ module.exports = app => {
     });
     User.hasMany(Rewards, { foreignKey: "user_id" });
     User.hasMany(Points, { foreignKey: "user_id" });
-    User.hasMany(Vouchers, { foreignKey: "user_id" });
+    User.belongsToMany(VoucherRules, {
+      through: Vouchers,
+      foreignKey: "user_id",
+      otherKey: "voucher_id",
+    });
+    User.belongsToMany(MemberCard, {
+      through: MemberCardRecord,
+      foreignKey: "user_id",
+      otherKey: "member_card_id",
+    });
+    User.hasMany(Payments, { foreignKey: "user_id" });
+  };
+
+  User.saveModify = async user => {
+    const { uuid } = user;
+    await User.update(user, { where: { uuid } });
+    return uuid;
   };
 
   User.getRole = async (userId, roleName) => {

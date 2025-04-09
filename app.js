@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-03 10:18:09
+ * @LastEditTime: 2025-03-17 11:16:02
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
@@ -12,6 +12,7 @@ require("dotenv").config();
 // const fecha = require("fecha");
 // const { v4: uuidv4 } = require("uuid");
 const md5 = require("md5");
+// const fecha = require("fecha");
 
 const { ADMIN_USERNAME, ADMIN_PASSWORD } = process.env;
 
@@ -164,16 +165,32 @@ class AppBootHook {
 
     // 初始化抵用券规则
     const voucherRules = [
-      { min_spend: 50, deduction: 5 },
-      { min_spend: 100, deduction: 10 },
-      { min_spend: 200, deduction: 15 },
-      { min_spend: 300, deduction: 20 },
+      {
+        voucher_name: "美式咖啡抵用券",
+        voucher_type: "美式咖啡抵用券",
+        status: true,
+      },
+      {
+        voucher_name: "运动电解质粉剂胶囊抵用卷",
+        voucher_type: "运动电解质粉剂胶囊抵用卷",
+        status: true,
+      },
     ];
+
+    // const now = new Date();
+    // const endDate = new Date(now);
+    // endDate.setFullYear(now.getFullYear() + 1);
 
     for (const rule of voucherRules) {
       const [createdRule, created] = await VoucherRules.findOrCreate({
-        where: { min_spend: rule.min_spend },
-        defaults: { deduction: rule.deduction },
+        where: { voucher_name: rule.voucher_name },
+        defaults: {
+          voucher_name: rule.voucher_name,
+          voucher_type: rule.voucher_type,
+          status: rule.status,
+          // start_date: fecha.format(now, "YYYY-MM-DD HH:mm:ss"),
+          // end_date: fecha.format(endDate, "YYYY-MM-DD HH:mm:ss"),
+        },
       });
       if (created) {
         this.app.logger.info(

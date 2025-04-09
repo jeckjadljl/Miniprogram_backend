@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-18 16:07:21
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-12-28 11:10:59
+ * @LastEditTime: 2025-03-25 10:55:58
  * @FilePath: \Mini_program_backend\app\service\address.js
  * @Description:
  *
@@ -84,28 +84,33 @@ class AddressService extends Service {
    */
   async getList(params = {}) {
     const { app } = this;
-    const { Sequelize } = app;
+    // const { Sequelize } = app;
     return await app.model.Address.getList({
       ...params,
       attributes: [
         "address_id",
         "linkMan",
         "linkPhone",
+        "province",
+        "city",
+        "district",
+        "detail",
+        "address_tag",
         "is_default",
         // 拼接 province, city, district, detail 成 address
-        [
-          Sequelize.fn(
-            "CONCAT",
-            Sequelize.col("province"),
-            Sequelize.literal("' '"), // 空格分隔
-            Sequelize.col("city"),
-            Sequelize.literal("' '"),
-            Sequelize.col("district"),
-            Sequelize.literal("' '"),
-            Sequelize.col("detail")
-          ),
-          "address", // 拼接后的字段名
-        ],
+        // [
+        //   Sequelize.fn(
+        //     "CONCAT",
+        //     Sequelize.col("province"),
+        //     Sequelize.literal("' '"), // 空格分隔
+        //     Sequelize.col("city"),
+        //     Sequelize.literal("' '"),
+        //     Sequelize.col("district"),
+        //     Sequelize.literal("' '"),
+        //     Sequelize.col("detail")
+        //   ),
+        //   "address", // 拼接后的字段名
+        // ],
       ],
     });
   }

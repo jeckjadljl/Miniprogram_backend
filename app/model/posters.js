@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-22 21:16:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-23 16:30:28
+ * @LastEditTime: 2025-03-23 23:42:20
  * @FilePath: \Mini_program_backend\app\model\posters.js
  * @Description:
  *
@@ -20,8 +20,9 @@ module.exports = app => {
   });
 
   Posters.associate = function () {
-    const { Elements } = model;
+    const { Elements, Goods } = model;
     Posters.belongsTo(Elements, { foreignKey: "elements_id" });
+    Posters.belongsTo(Goods, { foreignKey: "goods_id" });
   };
 
   Posters.saveNew = async posters => {
@@ -30,9 +31,18 @@ module.exports = app => {
   };
 
   Posters.get = async ({ uuid, orgUuid }) => {
-    return await Posters.findOnn({
+    return await Posters.findOne({
       where: { uuid, orgUuid },
     });
+  };
+
+  Posters.getHomeCarousel = async () => {
+    const carousel = await Posters.findAll({
+      where: {
+        purpose: "home",
+      },
+    });
+    return carousel;
   };
 
   return Posters;

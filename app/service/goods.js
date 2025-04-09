@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 12:02:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-05 15:24:27
+ * @LastEditTime: 2025-04-02 21:09:02
  * @FilePath: \Mini_program_backend\app\service\goods.js
  * @Description:
  *
@@ -80,6 +80,83 @@ class GoodsService extends Service {
             goods.imagesJsonStr = url; // 将其转换为数组
           })
       );
+    }
+
+    // 处理规格图片
+    if (goods.spec && Array.isArray(goods.spec)) {
+      goods.spec.forEach(spec => {
+        if (spec.specThumbnail && fs.existsSync(spec.specThumbnail)) {
+          const thumbnailBuffer = fs.readFileSync(spec.specThumbnail); // 读取本地文件
+          const thumbnailKey = `thumbnail/${path.basename(spec.specThumbnail)}`; // 存储路径
+          uploadPromises.push(
+            ctx.service.cos
+              .uploadFile(thumbnailBuffer, thumbnailKey, "", "")
+              .then(url => {
+                console.log("COS返回的URL:", url); // 添加日志
+                spec.specThumbnail = url;
+              })
+          );
+        }
+
+        if (spec.specImages && Array.isArray(spec.specImages)) {
+          spec.specImages.forEach((image, index) => {
+            if (fs.existsSync(image)) {
+              const imageBuffer = fs.readFileSync(image); // 读取本地文件
+              const imageKey = `carousel/${path.basename(image)}`; // 存储路径
+              uploadPromises.push(
+                ctx.service.cos
+                  .uploadFile(imageBuffer, imageKey, "", "")
+                  .then(url => {
+                    console.log("COS返回的URL:", url); // 添加日志
+                    spec.specImages[index] = url;
+                  })
+              );
+            }
+          });
+        } else if (spec.specImages && fs.existsSync(spec.specImages)) {
+          // 如果 spec.specImages 是单个字符串，也处理为单张图片
+          const imageBuffer = fs.readFileSync(spec.specImages); // 读取本地文件
+          const imageKey = `carousel/${path.basename(spec.specImages)}`; // 存储路径
+          uploadPromises.push(
+            ctx.service.cos
+              .uploadFile(imageBuffer, imageKey, "", "")
+              .then(url => {
+                console.log("COS返回的URL:", url); // 添加日志
+                spec.specImages = url; // 将其转换为数组
+              })
+          );
+        }
+
+        // 处理规格海报（新增逻辑）
+        if (spec.specPosters && Array.isArray(spec.specPosters)) {
+          spec.specPosters.forEach((poster, index) => {
+            if (fs.existsSync(poster)) {
+              const posterBuffer = fs.readFileSync(poster); // 读取本地文件
+              const posterKey = `posters/${path.basename(poster)}`; // 存储路径
+              uploadPromises.push(
+                ctx.service.cos
+                  .uploadFile(posterBuffer, posterKey, "", "")
+                  .then(url => {
+                    console.log("COS返回的URL:", url); // 添加日志
+                    spec.specPosters[index] = url;
+                  })
+              );
+            }
+          });
+        } else if (spec.specPosters && fs.existsSync(spec.specPosters)) {
+          // 如果 spec.specPosters 是单个字符串，也处理为单张图片
+          const posterBuffer = fs.readFileSync(spec.specPosters); // 读取本地文件
+          const posterKey = `posters/${path.basename(spec.specPosters)}`; // 存储路径
+          uploadPromises.push(
+            ctx.service.cos
+              .uploadFile(posterBuffer, posterKey, "", "")
+              .then(url => {
+                console.log("COS返回的URL:", url); // 添加日志
+                spec.specPosters = url; // 将其转换为数组
+              })
+          );
+        }
+      });
     }
 
     try {
@@ -311,20 +388,20 @@ class GoodsService extends Service {
    * @param {object} params - 条件
    * @return {object|null} - 查找结果
    */
-  async get(params) {
+  async get(params = {}) {
     const { app, ctx } = this;
-    const goodsData = (await app.model.Goods.get(params)) || {};
-    const { category_id: uuid, orgUuid } = goodsData;
-    const goodsCategory =
-      (await app.model.GoodsCategory.get({
-        uuid,
-        orgUuid,
-        attributes: ["name"],
-      })) || {};
+    const goodsData = await app.model.Goods.get(params);
+    const { category_id, orgUuid } = goodsData.goodsInfo;
+    const goodsCategory = await app.model.GoodsCategory.get({
+      uuid: category_id,
+      orgUuid,
+      attributes: ["name"],
+    });
 
     if (!app._.isEmpty(goodsData)) {
-      goodsData.dataValues.categoryName = goodsCategory.name;
+      goodsData.goodsInfo.dataValues.categoryName = goodsCategory.name;
     } else {
+      ctx.logger.warn(`商品分类信息不存在，category_id: ${category_id}`);
       ctx.throw(200, "查询不到指定的商品");
     }
 
@@ -348,7 +425,6 @@ class GoodsService extends Service {
         "orgUuid",
         "status",
         "unitName",
-        "spec",
         "goodsInfo",
         "salePrice",
         "thumbnail",

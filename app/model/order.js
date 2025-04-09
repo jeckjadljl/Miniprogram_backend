@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-22 18:07:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-08 23:10:09
+ * @LastEditTime: 2025-03-21 17:31:21
  * @FilePath: \Mini_program_backend\app\model\order.js
  * @Description:
  *
@@ -18,11 +18,14 @@ module.exports = app => {
   });
 
   Order.associate = function () {
-    const { User, OrderItem, Address, Merchant } = model;
+    const { User, OrderItem, Address, Merchant, Payments } = model;
     Order.belongsTo(User, { foreignKey: "user_id" });
     Order.hasMany(OrderItem, { foreignKey: "order_id" });
     Order.belongsTo(Address, { foreignKey: "address_id" });
     Order.belongsTo(Merchant, { foreignKey: "orgUuid" });
+    Order.belongsTo(Payments, {
+      foreignKey: "business_order_id",
+    });
   };
 
   /**
@@ -148,6 +151,29 @@ module.exports = app => {
   };
 
   /**
+   * 查询支付订单
+   * @param {object} { orderAttributes, orderLineAttributes, uuid, orgUuid } - 条件
+   * @return {object|null} - 查找结果
+   */
+  Order.getOrderFromPayments = async ({
+    orderAttributes,
+    orderLineAttributes,
+    uuid,
+  }) => {
+    return await Order.findOne({
+      attributes: orderAttributes,
+      include: [
+        {
+          model: model.OrderItem,
+          as: "orderitems",
+          attributes: orderLineAttributes,
+        },
+      ],
+      where: { uuid },
+    });
+  };
+
+  /**
    * 根据uuid查询订单
    * @param {object} uuid - 订单uuid
    * @return {object|null} - 查找结果
@@ -167,14 +193,26 @@ module.exports = app => {
       // 创建订单项
       const orderItems = goodsOrder.lines.map(item => ({
         order_id: order.uuid,
-        goods_id: item.goods_id,
-        name: item.name,
+        member_card_id: item.member_card_id || null,
+        member_card_name: item.member_card_name || null,
+        member_card_images: item.member_card_images || null,
+        member_card_salePrice: item.member_card_salePrice || null,
+        member_goods_id: item.member_goods_id || null,
+        member_packs_name: item.member_packs_name || null,
+        voucher_id: item.voucher_id || null,
+        voucher_name: item.voucher_name || null,
+        voucher_image: item.voucher_image || null,
+        voucher_type: item.voucher_type || null,
+        voucher_quantity: item.voucher_quantity || null,
+        points: item.points || null,
+        points_image: item.points_image || null,
+        goods_id: item.goods_id || null,
+        name: item.name || null,
         thumbnail: item.thumbnail || null,
         unitName: item.unitName || "件",
-        salePrice: item.salePrice,
+        salePrice: item.salePrice || null,
         spec: item.spec || null,
-        quantity: item.quantity,
-        created_at: new Date(),
+        quantity: item.quantity || null,
       }));
       await model.OrderItem.bulkCreate(orderItems, { transaction });
 
@@ -281,20 +319,69 @@ module.exports = app => {
    * @param {String} userId - 用户ID
    * @return {Array} 用户订单列表
    */
-  Order.getUserOrders = async params => {
-    const { userId, orderAttributes, orderLineAttributes } = params; // 再解构
-
-    return await Order.findAll({
-      where: { user_id: userId },
+  Order.getUserOrders = async ({
+    orderAttributes,
+    orderLineAttributes,
+    pagination = {},
+    filter = {},
+    sort = [],
+    user_id,
+  }) => {
+    const { page = 1, pageSize: limit = 10 } = pagination;
+    const { keywordsLike, daterange, status } = filter;
+    const order = getSortInfo(sort);
+    const condition = {
+      offset: (page - 1) * limit,
+      limit,
+      order,
       attributes: orderAttributes,
       include: [
         {
           model: model.OrderItem,
           as: "orderitems",
           attributes: orderLineAttributes,
+          separate: true, // 关键配置
+          order,
+          limit, // 控制关联项数量
         },
       ],
+      where: { user_id },
+    };
+
+    if (status) {
+      condition.where.order_status = status;
+    }
+
+    // 日期范围过滤
+    if (!_.isEmpty(daterange)) {
+      const [startDate, endDate] = daterange.map(date => new Date(date));
+      condition.where.createdTime = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
+
+    // 关键词搜索
+    if (keywordsLike) {
+      condition.where[Op.or] = [
+        { billNumber: { [Op.like]: `%${keywordsLike}%` } },
+        { userName: { [Op.like]: `%${keywordsLike}%` } },
+      ];
+    }
+
+    const result = await Order.findAll(condition);
+
+    // 需要手动处理分页总数
+    const total = await Order.count({
+      where: condition.where,
     });
+
+    return {
+      page,
+      total,
+      totalPages: Math.ceil(total / limit),
+      pageSize: limit,
+      data: result,
+    };
   };
 
   /**
