@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-02 11:40:46
+ * @LastEditTime: 2025-05-21 20:33:00
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -27,6 +27,9 @@ module.exports = app => {
       MemberGoods,
       Posters,
       GoodsSpecifications,
+      GoodsSales,
+      GoodsSpecColor,
+      GoodsPricing,
     } = app.model;
     Goods.belongsToMany(User, {
       through: "Cart",
@@ -48,6 +51,16 @@ module.exports = app => {
       foreignKey: "goods_id",
       otherKey: "member_card_id",
     });
+    Goods.hasOne(MemberGoods, {
+      foreignKey: "goods_id", // 这里应是 member_goods 表指向 goods 表的外键
+      as: "membergoods",
+    });
+    Goods.belongsTo(GoodsSales, { foreignKey: "goods_id", as: "sales" });
+    Goods.hasMany(GoodsSpecColor, { foreignKey: "goods_id", as: "specColor" });
+    Goods.hasMany(GoodsPricing, {
+      foreignKey: "goods_id",
+      as: "quantityPricing",
+    });
   };
 
   /**
@@ -59,19 +72,21 @@ module.exports = app => {
     return await app.transaction(async transaction => {
       const result = await Goods.create(goods, { transaction });
 
-      const goodsSpec = goods.spec.map(item => ({
-        goods_id: result.goods_id,
-        specName: item.specName,
-        specValue: item.specValue,
-        specPrice: item.specPrice,
-        stock: item.stock || null,
-        specThumbnail: item.specThumbnail || null,
-        specImages: item.specImages || null,
-        specPosters: item.specPosters || null,
-        isDefault: item.isDefault,
-      }));
+      if (goods.spec && Array.isArray(goods.spec)) {
+        const goodsSpec = goods.spec.map(item => ({
+          goods_id: result.goods_id,
+          specName: item.specName,
+          specValue: item.specValue,
+          specPrice: item.specPrice,
+          stock: item.stock || null,
+          specThumbnail: item.specThumbnail || null,
+          specImages: item.specImages || null,
+          specPosters: item.specPosters || null,
+          isDefault: item.isDefault,
+        }));
 
-      await model.GoodsSpecifications.bulkCreate(goodsSpec, { transaction });
+        await model.GoodsSpecifications.bulkCreate(goodsSpec, { transaction });
+      }
 
       return result.goods_id;
     });
@@ -97,17 +112,18 @@ module.exports = app => {
    * @return {object|null} - 查找结果
    */
   Goods.getGoodsWithCategory = async ({
+    uuid,
     categoryAttributes,
-    orgUuid,
     goodsAttributes,
   }) => {
     return await model.GoodsCategory.findAll({
       attributes: categoryAttributes,
-      where: { orgUuid },
+      where: { uuid },
       include: [
         {
           model: Goods,
           attributes: goodsAttributes,
+          where: { status: "up" },
         },
       ],
     });
@@ -171,35 +187,52 @@ module.exports = app => {
    */
   Goods.get = async params => {
     const { goods_id, orgUuid } = params;
-    if (!orgUuid) {
-      return await Goods.findOne({
-        where: { goods_id },
-      });
-    }
     const images = await model.Posters.findAll({
       where: { goods_id, orgUuid },
     });
     const goodsInfo = await Goods.findOne({
-      where: { goods_id, orgUuid },
+      where: { goods_id, orgUuid, status: "up" },
       include: [
         {
           model: model.GoodsSpecifications,
           attributes: [
             "spec_id",
             "goods_id",
+            "member_goods_id",
             "specName",
             "specValue",
             "specPrice",
             "stock",
             "specThumbnail",
+            "point_spend",
+            "cash_amount",
             "specImages",
             "specPosters",
             "isDefault",
           ],
           as: "spec",
         },
+        {
+          model: model.GoodsSpecColor,
+          attributes: [
+            "uuid",
+            "goods_id",
+            "spec_id",
+            "specName",
+            "specValue",
+            "specPrice",
+            "specColorThumbnail",
+            "specColorImages",
+          ],
+          as: "specColor",
+        },
       ],
     });
+
+    if (!goodsInfo) {
+      throw new Error("查询不到指定的商品");
+    }
+
     return {
       goodsInfo,
       images,
@@ -218,8 +251,51 @@ module.exports = app => {
   };
 
   // 获取所有商品列表
-  Goods.getAllGoods = async ({ attributes }) => {
-    return await Goods.findAll({ attributes });
+  Goods.getAllGoods = async ({
+    attributes,
+    pagination = {},
+    filter = {},
+    sort = [],
+    excludeMemberIds = [],
+    excludeIds = [], // 新增：已获取的视频ID集合
+  }) => {
+    const { page = 1, pageSize: limit = 20 } = pagination;
+    const { keywordsLike } = filter;
+
+    // 先查询满足条件的总数
+    const baseCondition = {
+      where: {
+        goods_id: { [Op.notIn]: excludeIds, [Op.notIn]: excludeMemberIds },
+        status: "up",
+      },
+    };
+
+    // 关键词搜索
+    if (keywordsLike) {
+      baseCondition.where[Op.or] = [
+        { billNumber: { [Op.like]: `%${keywordsLike}%` } },
+        { userName: { [Op.like]: `%${keywordsLike}%` } },
+      ];
+    }
+
+    // 需要手动处理分页总数
+    const total = await Goods.count(baseCondition);
+
+    const result = await Goods.findAll({
+      ...baseCondition,
+      limit,
+      offset: (page - 1) * limit,
+      attributes,
+      order: [Sequelize.literal("RAND()")], // 保留原有随机逻辑
+    });
+
+    return {
+      page,
+      total,
+      totalPages: Math.ceil(total / limit),
+      pageSize: limit,
+      data: result,
+    };
   };
 
   return Goods;

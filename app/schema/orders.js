@@ -2,14 +2,12 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:07:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-08 17:03:04
+ * @LastEditTime: 2025-05-06 16:35:22
  * @FilePath: \Mini_program_backend\app\schema\orders.js
  * @Description:
  *
  * Copyright (c) 2024 by ${git_name_email}, All Rights Reserved.
  */
-
-const points = require("./points");
 
 // schema/orders.js
 module.exports = app => {
@@ -72,7 +70,14 @@ module.exports = app => {
     discount_amount: DECIMAL(10, 2),
     points_amount: DECIMAL(10, 2),
     // initial: '待处理', paid: '待发货'(已支付), shipped: '已发货', completed: '已完成'（待评价）, canceled: '已取消'
-    order_status: ENUM("initial", "paid", "shipped", "completed", "canceled"),
+    order_status: ENUM(
+      "initial",
+      "paid",
+      "shipped",
+      "completed",
+      "remark",
+      "canceled"
+    ),
     billNumber: {
       type: STRING(38),
       allowNull: false,

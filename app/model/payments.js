@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-25 12:11:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-17 23:59:01
+ * @LastEditTime: 2025-05-13 00:36:58
  * @FilePath: \Mini_program_backend\app\model\payments.js
  * @Description:
  *
@@ -25,6 +25,13 @@ module.exports = app => {
 
   Payments.saveNew = async paymentData => {
     return await Payments.create(paymentData);
+  };
+
+  Payments.getUnpaid = async params => {
+    const { user_id } = params;
+    return await Payments.findAll({
+      where: { user_id, payment_status: "unpaid" },
+    });
   };
 
   return Payments;

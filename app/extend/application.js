@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-17 16:56:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-21 11:58:29
+ * @LastEditTime: 2025-05-18 12:29:56
  * @FilePath: \Mini_program_backend\app\extend\application.js
  * @Description:
  *
@@ -50,6 +50,14 @@ module.exports = {
       await transaction.rollback();
       throw error;
     }
+  },
+
+  generateGroupNo(userId) {
+    const timestamp = Date.now();
+    const userSuffix = userId.slice(-4); // 获取商户号后四位
+    const random = Math.floor(Math.random() * 899999 + 100000); // 6位随机数
+
+    return `G${userSuffix}${timestamp}${random}`;
   },
 
   // 获取排序条件数组

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-26 16:27:12
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-19 16:23:43
+ * @LastEditTime: 2025-05-21 00:20:03
  * @FilePath: \Mini_program_backend\app\controller\payments.js
  * @Description:
  *
@@ -19,6 +19,18 @@ class PaymentsController extends Controller {
     const wechatPayService = ctx.service.payments;
     const result = await wechatPayService.createPayment(ctx.request.body);
 
+    this.success(result);
+  }
+
+  async getUnpaid() {
+    const { ctx } = this;
+    const result = await ctx.service.payments.getUnpaid(ctx.request.body);
+    this.success(result);
+  }
+
+  async continuePayment() {
+    const { ctx } = this;
+    const result = await ctx.service.payments.continuePayment(ctx.request.body);
     this.success(result);
   }
 

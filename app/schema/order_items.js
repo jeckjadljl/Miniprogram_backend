@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:11:51
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-08 17:07:47
+ * @LastEditTime: 2025-05-11 20:52:58
  * @FilePath: \Mini_program_backend\app\schema\order_items.js
  * @Description:
  *
@@ -10,7 +10,7 @@
  */
 // schema/order_items.js
 module.exports = app => {
-  const { STRING, INTEGER, DECIMAL, UUIDV4, DATE, JSON } = app.Sequelize;
+  const { STRING, INTEGER, DECIMAL, UUIDV4, DATE, ENUM } = app.Sequelize;
 
   return {
     uuid: {
@@ -92,6 +92,14 @@ module.exports = app => {
       type: DECIMAL(10, 2),
       allowNull: false,
     }, // 实际支付的金额
+    discount_amount: {
+      type: DECIMAL(10, 2),
+      allowNull: true, // 折扣金额，如 10.00
+    },
+    status: {
+      type: ENUM("initial", "paid", "shipped", "completed", "canceled"),
+      allowNull: false,
+    },
     goods_id: {
       type: STRING(38),
       allowNull: true,

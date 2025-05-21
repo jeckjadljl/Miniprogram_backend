@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-23 16:10:59
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-23 23:41:44
+ * @LastEditTime: 2025-04-30 17:40:57
  * @FilePath: \Mini_program_backend\app\controller\posters.js
  * @Description:
  *
@@ -20,6 +20,16 @@ class PostersController extends Controller {
     };
     ctx.validate(rule);
     const result = await ctx.service.posters.saveNew(ctx.request.body);
+    this.success(result);
+  }
+
+  async saveModify() {
+    const { ctx } = this;
+    const rule = {
+      Posters: "object",
+    };
+    ctx.validate(rule);
+    const result = await ctx.service.posters.saveModify(ctx.request.body);
     this.success(result);
   }
 

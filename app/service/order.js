@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 17:23:38
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-27 12:28:16
+ * @LastEditTime: 2025-05-20 12:09:51
  * @FilePath: \Mini_program_backend\app\service\order.js
  * @Description:
  *
@@ -35,6 +35,10 @@ class OrderService extends Service {
         [
           Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
           "payment_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("points_amount"), 2),
+          "points_amount",
         ],
       ],
     });
@@ -71,6 +75,7 @@ class OrderService extends Service {
   async get(params = {}) {
     const { app, ctx } = this;
     const { Sequelize } = app;
+    console.log("查询订单参数:", params);
     const orderData = await app.model.Order.get({
       ...params,
       orderAttributes: [
@@ -86,16 +91,24 @@ class OrderService extends Service {
         "createdTime",
         "userName",
         [
-          Sequelize.fn("ROUND", Sequelize.col("total_amount"), 2),
+          Sequelize.fn("ROUND", Sequelize.col("order.total_amount"), 2),
           "total_amount",
         ],
         [
-          Sequelize.fn("ROUND", Sequelize.col("freight_amount"), 2),
+          Sequelize.fn("ROUND", Sequelize.col("order.freight_amount"), 2),
           "freight_amount",
         ],
         [
-          Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
+          Sequelize.fn("ROUND", Sequelize.col("order.payment_amount"), 2),
           "payment_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("order.points_amount"), 2),
+          "points_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("order.discount_amount"), 2),
+          "discount_amount",
         ],
       ],
       orderLineAttributes: [
@@ -105,17 +118,55 @@ class OrderService extends Service {
         "name",
         "goods_id",
         "spec",
-        [Sequelize.fn("ROUND", Sequelize.col("salePrice"), 2), "salePrice"],
+        "status",
         [
-          Sequelize.fn("0+CAST", Sequelize.literal("quantity AS CHAR")),
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.salePrice"), 2),
+          "salePrice",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.payment_amount"), 2),
+          "payment_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.points_amount"), 2),
+          "points_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.discount_amount"), 2),
+          "discount_amount",
+        ],
+        [
+          Sequelize.fn(
+            "0+CAST",
+            Sequelize.literal("orderitems.quantity AS CHAR")
+          ),
           "quantity",
         ],
+      ],
+      orderAddressAttributes: [
+        "address_id",
+        "linkMan",
+        "linkPhone",
+        "province",
+        "city",
+        "district",
+        "detail",
+        "is_default",
       ],
     });
 
     if (app._.isEmpty(orderData)) {
       ctx.throw(200, "查询不到指定的订单");
     }
+
+    // const address = await ctx.service.address.get({
+    //   uuid: orderData.address_id,
+    //   address_id: orderData.address_id,
+    // });
+
+    // if (address && !app._.isEmpty(address)) {
+    //   orderData.dataValues.address = address;
+    // }
 
     return orderData;
   }
@@ -154,7 +205,7 @@ class OrderService extends Service {
 
     // 计算所有订单的总金额
     function calculateTotalAmount(ordersList) {
-      return ordersList.reduce((sum, order) => sum + order.total_amount, 0);
+      return ordersList.reduce((sum, order) => sum + order.payment_amount, 0);
     }
 
     const totalAmount = calculateTotalAmount(ordersList);
@@ -226,6 +277,11 @@ class OrderService extends Service {
           Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
           "payment_amount",
         ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("discount_amount"), 2),
+          "discount_amount",
+        ],
+        "address_id",
       ],
       orderLineAttributes: [
         "uuid",
@@ -238,6 +294,18 @@ class OrderService extends Service {
         [
           Sequelize.fn("0+CAST", Sequelize.literal("quantity AS CHAR")),
           "quantity",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("points_amount"), 2),
+          "points_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
+          "payment_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("discount_amount"), 2),
+          "discount_amount",
         ],
         "member_card_name",
         "member_card_images",
@@ -337,6 +405,22 @@ class OrderService extends Service {
     });
   }
 
+  /**
+   * 评论订单
+   * @param {object} params - 条件
+   * @return {string} - 订单uuid
+   */
+  async remark(params = {}) {
+    const { app } = this;
+    const { user_id, userName, orgUuid } = params;
+    const modifyInfo = app.getModifyInfo(user_id, userName);
+    return await app.model.Order.complete({
+      ...params,
+      ...modifyInfo,
+      orgUuid,
+    });
+  }
+
   async getOrderFromPayments(params = {}) {
     const { app, ctx } = this;
     const { Sequelize } = app;
@@ -346,9 +430,22 @@ class OrderService extends Service {
         "uuid",
         "order_status",
         [
-          Sequelize.fn("ROUND", Sequelize.col("payment_amount"), 2),
+          Sequelize.fn("ROUND", Sequelize.col("order.total_amount"), 2),
+          "total_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("order.payment_amount"), 2),
           "payment_amount",
         ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("order.points_amount"), 2),
+          "points_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("order.discount_amount"), 2),
+          "discount_amount",
+        ],
+        "orgUuid",
       ],
       orderLineAttributes: [
         "uuid",
@@ -358,6 +455,23 @@ class OrderService extends Service {
         "voucher_type",
         "voucher_quantity",
         "points",
+        "goods_id",
+        "name",
+        "spec",
+        [Sequelize.fn("ROUND", Sequelize.col("salePrice"), 2), "salePrice"],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.points_amount"), 2),
+          "points_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.payment_amount"), 2),
+          "payment_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("orderitems.discount_amount"), 2),
+          "discount_amount",
+        ],
+        "quantity",
       ],
     });
 

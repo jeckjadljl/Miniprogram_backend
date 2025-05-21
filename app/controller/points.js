@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-15 10:45:30
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-15 10:46:49
+ * @LastEditTime: 2025-04-26 22:08:22
  * @FilePath: \Mini_program_backend\app\controller\points.js
  * @Description:
  *
@@ -16,6 +16,12 @@ class PointsController extends Controller {
   async saveNew() {
     const { ctx } = this;
     const result = await ctx.service.points.saveNew(ctx.request.body);
+    this.success(result);
+  }
+
+  async checkForAvailable() {
+    const { ctx } = this;
+    const result = await ctx.service.points.CheckForAvailable(ctx.request.body);
     this.success(result);
   }
 }

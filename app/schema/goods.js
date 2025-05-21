@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 21:44:14
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-01 23:31:52
+ * @LastEditTime: 2025-04-14 09:51:13
  * @FilePath: \Mini_program_backend\app\schema\goods.js
  * @Description:
  *
@@ -60,6 +60,10 @@ module.exports = app => {
       allowNull: false,
     }, // 商品的计量单位名称
     salePrice: {
+      type: DECIMAL(10, 2),
+      allowNull: false,
+    },
+    originalPrice: {
       type: DECIMAL(10, 2),
       allowNull: false,
     },

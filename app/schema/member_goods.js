@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-07 16:07:57
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-08 17:08:57
+ * @LastEditTime: 2025-05-11 17:12:25
  * @FilePath: \Mini_program_backend\app\schema\member_goods.js
  * @Description:
  *
@@ -73,10 +73,23 @@ module.exports = app => {
       type: STRING(255),
       allowNull: true,
     },
+    point_spend: {
+      type: DECIMAL(10, 2),
+      allowNull: true,
+    }, // 可直接设置可使用的健康币数量
+    cash_amount: {
+      type: DECIMAL(10, 2),
+      allowNull: true,
+    }, // 健康币兑换所需的现金
     points_deduction: {
       type: DECIMAL(10, 2),
       allowNull: true,
     }, // 可抵扣的健康币的比值
+    points_rate: {
+      type: DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0.1, // 默认健康币汇率
+    },
     deduction_type: {
       type: ENUM("points", "mixed"),
       allowNull: true,
@@ -109,6 +122,18 @@ module.exports = app => {
       type: INTEGER,
       allowNull: true,
       defaultValue: 1,
+    },
+    discount_amount: {
+      type: DECIMAL(10, 2),
+      allowNull: true, // 折扣金额，如 10.00
+    },
+    discount_type: {
+      type: ENUM("exchange", "special offer", "Presale", "group buy"), // 折扣类型，如固定金额或百分比
+      allowNull: true,
+    },
+    discount_tag: {
+      type: STRING(100), // 折扣标签，如 "满减", "限时折扣"
+      allowNull: true,
     },
     member_goods_status: {
       type: ENUM("up", "down"),

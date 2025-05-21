@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-07 23:14:44
+ * @LastEditTime: 2025-05-20 21:03:08
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -35,6 +35,7 @@ module.exports = options => {
       "/elements/getAll",
       "/elements/get",
       "/posters/saveNew",
+      "/posters/saveModify",
       "/goodsCategory/saveModify",
       "/payments/createOrder",
       "/order/createBill",
@@ -53,7 +54,6 @@ module.exports = options => {
       "/memberPrivileges/getAll",
       "/memberGoods/getGoodsByCardId",
       "/memberGoods/saveNew",
-      "/user/saveModify",
       "/user/getUserByName",
       "/voucher_rules/saveNew",
       "/notice/wechatPayCallback",
@@ -67,6 +67,29 @@ module.exports = options => {
       "/notice/getNotice",
       "/notice/getNoticeByElementsId",
       "/memberGoods/getMemberGoodsList",
+      "/goodsSpecifications/saveNew",
+      "/goodsSpecifications/saveModify",
+      "/memberGoods/getByPromotionName",
+      "/promotion/saveNew",
+      "/memberGoods/saveModify",
+      "/cart/getCartList",
+      "/video/saveNew",
+      "/video/getVideoList",
+      "/video/saveLikes",
+      "/promotion/getAll",
+      "/logistics/saveNew",
+      "/logistics/updateWaybillToken",
+      "/cart/getCombinedCartList",
+      "/memberCart/addGoodsToCart",
+      "/promotion/getByActivityType",
+      "/goodsPromotion/saveNew",
+      "/goodsSpecColor/saveNew",
+      "/goodsSpecColor/saveModify",
+      "/goodsPricing/saveNew",
+      "/goodsPricing/getGoodsPricingById",
+      "/group/saveNew",
+      "/order/getUserOrders",
+      "/promotion/saveModify",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

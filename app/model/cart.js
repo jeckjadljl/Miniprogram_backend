@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:27:25
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-06 18:16:50
+ * @LastEditTime: 2025-05-21 10:01:59
  * @FilePath: \Mini_program_backend\app\model\cart.js
  * @Description:
  *
@@ -79,6 +79,85 @@ module.exports = app => {
     });
   };
 
+  Cart.getCombinedCartItems = async userId => {
+    // 查询普通购物车
+    const regularCart = await Cart.getCartItems(userId);
+
+    // 查询会员购物车
+    const memberCart = await model.MemberCart.getCartItems({
+      userId,
+      attributes: [
+        "name",
+        "salePrice",
+        "unitName",
+        "thumbnail",
+        "goodsInfo",
+        "orgUuid",
+      ],
+      goodsSpecAttributes: [
+        "spec_id",
+        "goods_id",
+        "member_goods_id",
+        "specName",
+        "specValue",
+        "specPrice",
+        "point_spend",
+        "cash_amount",
+        "stock",
+        "specThumbnail",
+        "specImages",
+        "specPosters",
+        "isDefault",
+      ],
+      goodsSpecColorAttributes: [
+        "uuid",
+        "goods_id",
+        "spec_id",
+        "specName",
+        "specValue",
+        "specPrice",
+        "specColorThumbnail",
+        "specColorImages",
+      ],
+      memberGoodsAttributes: [
+        "id",
+        "member_packs_name",
+        "member_packs_salePrice",
+        "voucher_id",
+        "voucher_name",
+        "voucher_image",
+        "voucher_type",
+        "voucher_quantity",
+        "points",
+        "points_image",
+        "points_deduction",
+        "points_rate",
+        "point_spend",
+        "cash_amount",
+        "deduction_type",
+        "goods_id",
+        "name",
+        "thumbnail",
+        "unitName",
+        "salePrice",
+        "spec",
+        "quantity",
+        "discount_amount",
+        "discount_type",
+        "discount_tag",
+        "member_goods_status",
+        "orgUuid",
+      ],
+      raw: true,
+      nest: true,
+    });
+
+    // 合并结果并按时间排序
+    return [...regularCart, ...memberCart].sort(
+      (a, b) => new Date(b.createdTime) - new Date(a.createdTime)
+    );
+  };
+
   // 获取用户购物车列表
   Cart.getCartItems = async userId => {
     return await Cart.findAll({
@@ -105,12 +184,28 @@ module.exports = app => {
                 "specName",
                 "specValue",
                 "specPrice",
+                "point_spend",
+                "cash_amount",
                 "stock",
                 "specThumbnail",
                 "specImages",
                 "specPosters",
                 "isDefault",
               ],
+            },
+            {
+              model: model.GoodsSpecColor,
+              attributes: [
+                "uuid",
+                "goods_id",
+                "spec_id",
+                "specName",
+                "specValue",
+                "specPrice",
+                "specColorThumbnail",
+                "specColorImages",
+              ],
+              as: "specColor",
             },
           ],
         },

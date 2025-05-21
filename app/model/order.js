@@ -1,8 +1,10 @@
+const { includes } = require("lodash");
+
 /*
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-22 18:07:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-21 17:31:21
+ * @LastEditTime: 2025-05-19 23:51:32
  * @FilePath: \Mini_program_backend\app\model\order.js
  * @Description:
  *
@@ -18,12 +20,12 @@ module.exports = app => {
   });
 
   Order.associate = function () {
-    const { User, OrderItem, Address, Merchant, Payments } = model;
+    const { User, OrderItem, Address, Merchant, Payments, Logistics } = model;
     Order.belongsTo(User, { foreignKey: "user_id" });
     Order.hasMany(OrderItem, { foreignKey: "order_id" });
-    Order.belongsTo(Address, { foreignKey: "address_id" });
+    Order.belongsTo(Address, { foreignKey: "address_id", as: "address" });
     Order.belongsTo(Merchant, { foreignKey: "orgUuid" });
-    Order.belongsTo(Payments, {
+    Order.hasOne(Payments, {
       foreignKey: "business_order_id",
     });
   };
@@ -134,6 +136,7 @@ module.exports = app => {
   Order.get = async ({
     orderAttributes,
     orderLineAttributes,
+    orderAddressAttributes,
     uuid,
     orgUuid,
   }) => {
@@ -144,6 +147,17 @@ module.exports = app => {
           model: model.OrderItem,
           as: "orderitems",
           attributes: orderLineAttributes,
+          include: [
+            {
+              model: model.MemberGoods,
+              as: "membergoods", // 新增会员商品关联
+            },
+          ],
+        },
+        {
+          model: model.Address,
+          as: "address",
+          attributes: orderAddressAttributes,
         },
       ],
       where: { uuid, orgUuid },
@@ -199,6 +213,7 @@ module.exports = app => {
         member_card_salePrice: item.member_card_salePrice || null,
         member_goods_id: item.member_goods_id || null,
         member_packs_name: item.member_packs_name || null,
+        member_packs_salePrice: item.member_packs_salePrice || null,
         voucher_id: item.voucher_id || null,
         voucher_name: item.voucher_name || null,
         voucher_image: item.voucher_image || null,
@@ -206,6 +221,11 @@ module.exports = app => {
         voucher_quantity: item.voucher_quantity || null,
         points: item.points || null,
         points_image: item.points_image || null,
+        points_deduction: item.points_deduction || null,
+        points_amount: item.points_amount || null,
+        payment_amount: item.payment_amount || null,
+        discount_amount: item.discount_amount || null,
+        status: item.status || "initial",
         goods_id: item.goods_id || null,
         name: item.name || null,
         thumbnail: item.thumbnail || null,
@@ -315,6 +335,37 @@ module.exports = app => {
   };
 
   /**
+   * 评论订单
+   * @param {object} params - 条件
+   * @return {string} - 订单uuid
+   */
+  Order.remark = async params => {
+    const { uuid, orgUuid, lastModifierId, lastModifierName } = params;
+    const result = await Order.update(
+      { order_status: "remark", lastModifierId, lastModifierName },
+      {
+        where: { uuid, orgUuid, order_status: "completed" },
+      }
+    );
+    checkUpdate(result);
+
+    const orderInstance = await Order.findByPk(uuid);
+    if (orderInstance) {
+      app.addDelayTask(
+        "rewardDistribution",
+        uuid,
+        {
+          userId: orderInstance.user_id,
+          totalAmount: orderInstance.payment_amount,
+        },
+        1800
+      ); // 30分钟=1800秒
+    }
+
+    return uuid;
+  };
+
+  /**
    * 查询用户订单列表
    * @param {String} userId - 用户ID
    * @return {Array} 用户订单列表
@@ -330,6 +381,7 @@ module.exports = app => {
     const { page = 1, pageSize: limit = 10 } = pagination;
     const { keywordsLike, daterange, status } = filter;
     const order = getSortInfo(sort);
+    console.log(order);
     const condition = {
       offset: (page - 1) * limit,
       limit,
@@ -340,7 +392,7 @@ module.exports = app => {
           model: model.OrderItem,
           as: "orderitems",
           attributes: orderLineAttributes,
-          separate: true, // 关键配置
+          // separate: true, // 关键配置
           order,
           limit, // 控制关联项数量
         },

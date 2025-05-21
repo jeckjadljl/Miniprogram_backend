@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-06 22:42:37
+ * @LastEditTime: 2025-05-19 09:48:58
  * @FilePath: \Mini_program_backend\config\config.default.js
  * @Description:
  *
@@ -41,6 +41,8 @@ module.exports = appInfo => {
     WX_PAYMENTS_SERIAL_NO,
     WX_PAYMENTS_APIV3_KEY,
     WX_NOTIFY_URL,
+    KDNIAO_API_KEY,
+    KDNIAO_REQUEST_URL,
   } = process.env;
 
   config.cluster = {
@@ -55,7 +57,7 @@ module.exports = appInfo => {
   config.keys = appInfo.name + "_1729071823602_1200";
 
   // add your middleware config here
-  config.middleware = [];
+  config.middleware = ["auth"];
 
   // add your user config here
   const userConfig = {
@@ -67,8 +69,6 @@ module.exports = appInfo => {
       enable: false,
     },
   };
-
-  config.middleware = ["auth"];
 
   config.mysql = {
     // database configuration
@@ -159,6 +159,12 @@ module.exports = appInfo => {
         password: "",
         db: 3,
       },
+      group: {
+        host: REDIS_HOST,
+        port: REDIS_PORT,
+        password: "",
+        db: 4,
+      },
     },
   };
 
@@ -171,8 +177,10 @@ module.exports = appInfo => {
   };
 
   config.cors = {
-    origin: "*", // 跨任何域
+    origin: "*", // 改为你的前端地址
     allowMethods: "GET,HEAD,PUT,POST,DELETE,PATCH,OPTIONS", // 被允许的请求方式
+    credentials: true, // 如果需要跨域传递 Cookie 或 Authorization
+    allowHeaders: "Content-Type,Authorization,X-Token", // 明确允许的请求头
   };
 
   config.io = {
@@ -195,6 +203,11 @@ module.exports = appInfo => {
   config.multipart = {
     mode: "file",
     fileExtensions: [".jpg", ".jpeg", ".png"], // 允许的上传文件类型
+  };
+
+  config.kdniao = {
+    apiKey: KDNIAO_API_KEY,
+    requestUrl: KDNIAO_REQUEST_URL,
   };
 
   // config/config.default.js

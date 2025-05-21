@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:25:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-07 23:13:47
+ * @LastEditTime: 2025-04-14 14:53:31
  * @FilePath: \Mini_program_backend\app\controller\member_goods.js
  * @Description:
  *
@@ -19,6 +19,16 @@ class Member_goodsController extends Controller {
     this.success(result);
   }
 
+  async saveModify() {
+    const { ctx } = this;
+    const rule = {
+      memberGoods: "object",
+    };
+    ctx.validate(rule);
+    const result = await ctx.service.memberGoods.saveModify(ctx.request.body);
+    this.success(result);
+  }
+
   async getGoodsByCardId() {
     const { ctx } = this;
     const result = await ctx.service.memberGoods.getGoodsByCardId(
@@ -30,6 +40,14 @@ class Member_goodsController extends Controller {
   async getMemberGoodsList() {
     const { ctx } = this;
     const result = await ctx.service.memberGoods.getMemberGoodsList(
+      ctx.request.body
+    );
+    this.success(result);
+  }
+
+  async getByPromotionName() {
+    const { ctx } = this;
+    const result = await ctx.service.memberGoods.getByPromotionName(
       ctx.request.body
     );
     this.success(result);

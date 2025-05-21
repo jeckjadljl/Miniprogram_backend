@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 17:11:45
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-28 16:35:08
+ * @LastEditTime: 2025-05-10 16:19:30
  * @FilePath: \Mini_program_backend\app\controller\cart.js
  * @Description:
  *
@@ -58,6 +58,13 @@ class CartController extends Controller {
       decrement
     );
     this.success(goods);
+  }
+
+  async getCombinedCartList() {
+    const { ctx } = this;
+    const { userId } = ctx.request.body;
+    const combinedList = await ctx.service.cart.getCombinedCartItems(userId);
+    this.success(combinedList);
   }
 
   async getCartList() {

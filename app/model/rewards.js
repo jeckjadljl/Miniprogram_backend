@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-22 16:29:35
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2024-11-27 12:03:27
+ * @LastEditTime: 2025-04-26 17:35:51
  * @FilePath: \Mini_program_backend\app\model\rewards.js
  * @Description:
  *
@@ -33,7 +33,6 @@ module.exports = app => {
       user_id: userId,
       amount,
       description,
-      created_at: new Date(),
     });
   };
 

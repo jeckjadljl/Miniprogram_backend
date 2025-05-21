@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-17 11:16:02
+ * @LastEditTime: 2025-05-20 23:39:50
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
@@ -14,7 +14,8 @@ require("dotenv").config();
 const md5 = require("md5");
 // const fecha = require("fecha");
 
-const { ADMIN_USERNAME, ADMIN_PASSWORD } = process.env;
+const { ADMIN_USERNAME, ADMIN_PASSWORD, TENCENT_BUCKET, TENCENT_REGION } =
+  process.env;
 
 class AppBootHook {
   constructor(app) {
@@ -168,11 +169,13 @@ class AppBootHook {
       {
         voucher_name: "美式咖啡抵用券",
         voucher_type: "美式咖啡抵用券",
+        voucher_image: `https://${TENCENT_BUCKET}.cos.${TENCENT_REGION}.myqcloud.com/Vouchers/%E7%94%9F%E6%88%90%E7%BE%8E%E5%BC%8F%E5%92%96%E5%95%A1%E6%8A%B5%E7%94%A8%E5%88%B8.png`,
         status: true,
       },
       {
         voucher_name: "运动电解质粉剂胶囊抵用卷",
         voucher_type: "运动电解质粉剂胶囊抵用卷",
+        voucher_image: `https://${TENCENT_BUCKET}.cos.${TENCENT_REGION}.myqcloud.com/Vouchers/%E8%BF%90%E5%8A%A8%E7%94%B5%E8%A7%A3%E8%B4%A8%E7%B2%89%E5%89%82%E8%83%B6%E5%9B%8A.png`,
         status: true,
       },
     ];
@@ -187,6 +190,7 @@ class AppBootHook {
         defaults: {
           voucher_name: rule.voucher_name,
           voucher_type: rule.voucher_type,
+          voucher_image: rule.voucher_image,
           status: rule.status,
           // start_date: fecha.format(now, "YYYY-MM-DD HH:mm:ss"),
           // end_date: fecha.format(endDate, "YYYY-MM-DD HH:mm:ss"),
@@ -244,6 +248,54 @@ class AppBootHook {
           `处理取消订单任务时出错: uuid=${uuid}, 错误信息:`,
           error.message
         );
+      }
+    });
+
+    // 在app.js的延迟任务处理器中新增
+    app.registerTaskHandler("autoClosePaymentOrder", async outTradeNo => {
+      const ctx = app.createAnonymousContext();
+      try {
+        // 1. 关闭微信支付订单
+        await ctx.service.payments.closeOrder(outTradeNo);
+
+        // 2. 更新本地订单状态
+        const payment = await ctx.model.Payments.findOne({
+          where: { out_trade_no: outTradeNo },
+        });
+
+        if (payment && payment.payment_status === "unpaid") {
+          await payment.update({
+            payment_status: "closed",
+            trade_state: "CLOSED",
+          });
+
+          // 3. 关联业务订单状态更新
+          const orderService = ctx.service.order;
+          for (const orderId of payment.business_order_id) {
+            await orderService.cancel({
+              uuid: orderId,
+              user_id: payment.user_id,
+              orgUuid: payment.orgUuid,
+            });
+          }
+        }
+      } catch (error) {
+        ctx.logger.error(`自动关闭订单失败: ${outTradeNo}`, error);
+      }
+    });
+
+    app.registerTaskHandler("rewardDistribution", async (uuid, taskData) => {
+      try {
+        const order = await ctx.service.order.getByUuid(uuid);
+        if (order && order.order_status === "remark") {
+          await ctx.service.rewards.processCompletedOrder({
+            order,
+            ...taskData,
+          });
+          console.log(`订单奖励发放成功: ${uuid}`);
+        }
+      } catch (e) {
+        ctx.logger.error(`奖励发放任务失败: ${uuid}`, e.message);
       }
     });
 

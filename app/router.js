@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-07 23:43:15
+ * @LastEditTime: 2025-05-21 00:20:13
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -19,6 +19,7 @@ module.exports = app => {
     login,
     user,
     cart,
+    memberCart,
     goods,
     order,
     address,
@@ -40,6 +41,13 @@ module.exports = app => {
     voucherRules,
     vouchers,
     points,
+    goodsSpecifications,
+    promotion,
+    video,
+    logistics,
+    goodsPromotion,
+    goodsPricing,
+    groups,
   } = controller;
 
   router.get("/", home.index);
@@ -79,10 +87,20 @@ module.exports = app => {
   router.post("/cart/decrementGoodsQuantity", cart.decrementGoodsQuantity);
   router.post("/cart/getCartList", cart.getCartList);
   router.post("/cart/clearCart", cart.clearCart);
+  router.post("/cart/getCombinedCartList", cart.getCombinedCartList);
+
+  // 会员商品购物车
+  router.post("/memberCart/addGoodsToCart", memberCart.addGoodsToCart);
+  router.post("/memberCart/updateSpec", memberCart.updateSpec);
+  router.post(
+    "/memberCart/removeGoodsFromCart",
+    memberCart.removeGoodsFromCart
+  );
+  router.post("/memberCart/getCartList", memberCart.getCartList);
 
   // 商品数据
-  router.get("/goods/getGoodsWithCategory", goods.getGoodsWithCategory);
-  router.get("/goods/getGoodsList", goods.getGoodsList);
+  router.post("/goods/getGoodsWithCategory", goods.getGoodsWithCategory);
+  router.post("/goods/getGoodsList", goods.getGoodsList);
   router.post("/goods/getGoodsById", goods.getGoodsById);
 
   // 商品类别
@@ -107,7 +125,7 @@ module.exports = app => {
   router.post("/address/saveNewAddress", address.saveNewAddress);
   router.post("/address/saveModifyAddress", address.saveModifyAddress);
 
-  // 微信小程序消息通知
+  // 微信小程序消息通知栏
   router.post("/notice/saveNewForWeapp", notice.saveNewForWeapp);
   router.post("/notice/getNotice", notice.getNotice);
   router.post("/notice/getNoticeByElementsId", notice.getNoticeByElementsId);
@@ -133,31 +151,59 @@ module.exports = app => {
   router.get("/elements/getAll", elements.getAll);
   router.post("/elements/get", elements.get);
 
+  // 获取促销板块
+  router.get("/promotion/getAll", promotion.getAll);
+  router.post("/promotion/getByActivityType", promotion.getByActivityType);
+
+  // 获取视频列表
+  router.post("/video/getVideoList", video.getVideoList);
+  router.post("/video/saveLikes", video.saveLikes);
+
   // 上传海报
   router.post("/posters/saveNew", posters.saveNew);
+  router.post("/posters/saveModify", posters.saveModify);
+
   // 获取主页海报（轮播图）
   router.get("/posters/getHomeCarousel", posters.getHomeCarousel);
 
   // 微信支付(调起支付)
   router.post("/payments/createPayment", payments.createPayment);
+  // 继续支付
+  router.post("/payments/continuePayment", payments.continuePayment);
   // 微信支付回调消息
   router.post("/notice/wechatPayCallback", notice.wechatPayCallback);
   // 微信支付订单号查询订单
   router.post("/payments/queryOrder", payments.getOrderStatus);
   // 支付统一调起流程（试验中）
   router.post("/payments/paymentsOrderQuery", payments.paymentsOrderQuery);
+  // 获取未支付的记录
+  router.post("/payments/getUnpaid", payments.getUnpaid);
 
   // 获取会员卡数据
   router.get("/membership/getAll", membership.getAll);
+  router.post("/membership/getAllMemberCard", membership.getAllMemberCard);
   router.get("/memberPrivileges/getAll", memberPrivileges.getAll);
+
+  // 会员商品
   router.post("/memberGoods/getGoodsByCardId", memberGoods.getGoodsByCardId);
   router.post(
     "/memberGoods/getMemberGoodsList",
     memberGoods.getMemberGoodsList
   );
-  router.post("/membership/getAllMemberCard", membership.getAllMemberCard);
+  router.post(
+    "/memberGoods/getByPromotionName",
+    memberGoods.getByPromotionName
+  );
   // 获取用户会员等级
   router.post("/membership/getMembershipLevel", membership.getMembershipLevel);
+
+  // 检查用户是否能够使用健康币
+  router.post("/points/checkForAvailable", points.checkForAvailable);
+
+  // 团购
+  router.post("/group/saveNew", groups.createGroup);
+  router.post("/group/getGroupStatus", groups.getGroupStatus);
+  router.post("/group/joinGroup", groups.joinGroup);
 
   /**
    * 暂时无用
@@ -190,11 +236,26 @@ module.exports = app => {
   router.post("/permissions/saveNew", permissions.saveNew);
   router.post("/memberPrivileges/saveNew", memberPrivileges.saveNew);
 
-  // 会员卡礼品
+  // 会员卡/会员商品
   router.post("/memberGoods/saveNew", memberGoods.saveNew);
+  router.post("/memberGoods/saveModify", memberGoods.saveModify);
 
   // 抵用券
   router.post("/voucher_rules/saveNew", voucherRules.saveNew);
+
+  // 促销活动
+  router.post("/promotion/saveNew", promotion.saveNew);
+  router.post("/promotion/saveModify", promotion.saveModify);
+
+  // 视频
+  router.post("/video/saveNew", video.saveNew);
+
+  // 添加运单号
+  router.post("/logistics/saveNew", logistics.saveNew);
+  router.post("/logistics/updateWaybillToken", logistics.updateWaybillToken);
+
+  // 添加会员商品到对应活动中
+  router.post("/goodsPromotion/saveNew", goodsPromotion.saveNew);
 
   /**
    * 管理端-管理员
@@ -213,7 +274,7 @@ module.exports = app => {
 
   // 订货单
   router.post("/bill/order/query", order.query);
-  router.get("/bill/order/get", order.get);
+  router.post("/bill/order/get", order.get);
   router.post("/bill/order/dispatch", order.dispatch);
   router.post("/bill/order/complete", order.complete);
 
@@ -231,7 +292,28 @@ module.exports = app => {
   router.post("/goods/up", goods.up);
   router.post("/goods/down", goods.down);
   router.post("/goods/query", goods.query);
-  router.get("/goods/get", goods.get);
+  router.post("/goods/get", goods.get);
+
+  // 商品规格
+  router.post("/goodsSpecifications/saveNew", goodsSpecifications.saveNew);
+  router.post(
+    "/goodsSpecifications/saveModify",
+    goodsSpecifications.saveModify
+  );
+
+  // 商品规格颜色
+  router.post("/goodsSpecColor/saveNew", goodsSpecifications.saveNewColor);
+  router.post(
+    "/goodsSpecColor/saveModify",
+    goodsSpecifications.saveModifyColor
+  );
+
+  // 商品对应数量的价格管理
+  router.post("/goodsPricing/saveNew", goodsPricing.saveNew);
+  router.post(
+    "/goodsPricing/getGoodsPricingById",
+    goodsPricing.getGoodsPricingById
+  );
 
   // 运费方案
   router.post("/freightPlan/saveNew", freightPlan.saveNew);

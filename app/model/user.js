@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-17 22:14:18
+ * @LastEditTime: 2025-05-18 16:04:48
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -36,6 +36,7 @@ module.exports = app => {
       MemberCardRecord,
       VoucherRules,
       Payments,
+      GroupBuyer,
     } = model;
     User.belongsToMany(Role, {
       through: UserRoles,
@@ -73,6 +74,7 @@ module.exports = app => {
       otherKey: "member_card_id",
     });
     User.hasMany(Payments, { foreignKey: "user_id" });
+    User.hasMany(GroupBuyer, { foreignKey: "user_id" });
   };
 
   User.saveModify = async user => {
@@ -143,8 +145,8 @@ module.exports = app => {
     const newBalance = Math.max(0, currentPoints - parseFloat(point)); // 积分不允许为负
 
     // 更新用户积分余额
-    this.consumption_points = newBalance;
-    await this.save();
+    user.consumption_points = newBalance;
+    await user.save();
 
     return newBalance;
   };
@@ -185,8 +187,8 @@ module.exports = app => {
     const newBalance = currentBalance + parseFloat(amount);
 
     // 更新用户积分余额
-    this.balance = newBalance;
-    await this.save();
+    user.balance = newBalance;
+    await user.save();
 
     return newBalance;
   };
@@ -202,8 +204,8 @@ module.exports = app => {
     const newBalance = Math.max(0, currentBalance - parseFloat(amount)); // 积分不允许为负
 
     // 更新用户积分余额
-    this.balance = newBalance;
-    await this.save();
+    user.balance = newBalance;
+    await user.save();
 
     return newBalance;
   };

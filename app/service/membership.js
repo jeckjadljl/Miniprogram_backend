@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 10:46:44
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-04 16:37:31
+ * @LastEditTime: 2025-04-17 16:27:14
  * @FilePath: \Mini_program_backend\app\service\membership.js
  * @Description:
  *
@@ -27,7 +27,7 @@ class MembershipService extends Service {
       }
 
       // 查询用户总消费金额
-      const totalSpent = await Order.sum("total_amount", {
+      const totalSpent = await Order.sum("payment_amount", {
         where: { user_id: userId },
       });
 
@@ -68,6 +68,7 @@ class MembershipService extends Service {
 
       return {
         user,
+        totalSpent,
         memberLevel: updatedLevel, // 直接使用获取到
       };
     } catch (error) {

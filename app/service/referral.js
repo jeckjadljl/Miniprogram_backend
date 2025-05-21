@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-07 17:01:18
+ * @LastEditTime: 2025-04-26 16:53:04
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -15,8 +15,9 @@ const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 
 class ReferralService extends Service {
-  async distributeReferralReward(user_id, items, membershipLevel) {
+  async distributeReferralReward(user_id, items, totalSpent, membershipLevel) {
     const { Referrals, Rewards, User, UserRoles, Order } = this.ctx.model;
+    const { ctx } = this;
     // 查询直接推荐关系
     const directReferral = await Referrals.findReferred(user_id);
     if (!directReferral) return; // 没有推荐关系
@@ -25,6 +26,61 @@ class ReferralService extends Service {
     const upperReferral = await Referrals.findReferred(directReferrerId);
     // 获取上级推荐人信息
     const upperReferrerId = upperReferral.referrer_id;
+
+    // 查询用户订单总数
+    const orderCount = await Order.count({
+      where: { user_id },
+    });
+
+    // 查询用户累计消费金额
+    const totalConsumption = await Order.sum("payment_amount", {
+      where: { user_id },
+    });
+
+    // 判断是否满足发放健康币条件
+    const referralPoints = await ctx.service.points.getPointsByReferral({
+      referrer_id: directReferrerId, // 推荐人ID
+      referred_user_id: user_id, // 被推荐人ID
+    });
+
+    // 获取首次订单信息
+    const firstOrder = await Order.findOne({
+      where: { user_id },
+      order: [["createdTime", "ASC"]],
+    });
+
+    const shouldGivePoints =
+      (orderCount === 1 && totalSpent >= 50) || // 首单达标
+      (totalConsumption >= 50 && // 累计达标
+        (!referralPoints || // 未发过奖励
+          (firstOrder && referralPoints.createdTime < firstOrder.createdTime))); // 防御已有错误数据
+
+    // 发放健康币
+    if (shouldGivePoints) {
+      // 给直接推荐人发放50个健康币
+      await ctx.service.points.saveNew({
+        user_id: directReferrerId,
+        points: 50,
+        source: "referral",
+        source_id: user_id, // 新增被推荐人ID
+      });
+      this.logger.info(
+        `直接推荐奖励发放成功，推荐人: ${directReferrerId}, 健康币x50`
+      );
+
+      // 给上级推荐人发放5个健康币
+      if (upperReferrerId) {
+        await ctx.service.points.saveNew({
+          user_id: upperReferrerId,
+          points: 5,
+          source: "referral",
+          source_id: user_id, // 新增被推荐人ID
+        });
+        this.logger.info(
+          `上级推荐奖励发放成功，推荐人: ${upperReferrerId}, 健康币x5`
+        );
+      }
+    }
 
     // 会员卡固定返佣逻辑
     if (membershipLevel === "member_card") {
@@ -47,29 +103,30 @@ class ReferralService extends Service {
 
     // 遍历所有商品项计算佣金
     for (const { item, goods } of items) {
-      const { salePrice } = item;
-      const categoryName = goods?.categoryName || "";
+      const { salePrice, payment_amount } = item;
+      const st = payment_amount > 0 ? payment_amount : salePrice;
+      const categoryName = goods?.goodsInfo.categoryName || "";
 
       const getdirLevel = await UserRoles.getMembershipLevel(directReferrerId);
 
       // 运动装备特殊分佣逻辑
       if (categoryName === "运动装备") {
-        if (salePrice === 298) {
+        if (st === 298) {
           totalDirectReward += 88;
-          totalUpperReward += salePrice * 0.19;
-        } else if (salePrice === 168) {
+          totalUpperReward += 20;
+        } else if (st === 168) {
           totalDirectReward += 50;
-          totalUpperReward += salePrice * 0.19;
+          totalUpperReward += 10;
         }
-        totalDirectReward += salePrice * 0.05;
-        totalUpperReward += salePrice * 0.03;
+        totalDirectReward += st * 0.03;
+        totalUpperReward += st * 0.005;
       } else if (getdirLevel === "premium") {
-        totalDirectReward += salePrice * 0.08; // 直接推荐人奖励
-        totalUpperReward += salePrice * 0.05; // 上级推荐人奖励
+        totalDirectReward += st * 0.05; // 直接推荐人奖励
+        totalUpperReward += st * 0.01; // 上级推荐人奖励
       } else {
         // 普通商品分佣逻辑
-        totalDirectReward += salePrice * 0.05;
-        totalUpperReward += salePrice * 0.03;
+        totalDirectReward += st * 0.03;
+        totalUpperReward += st * 0.005;
       }
     }
 
@@ -171,12 +228,6 @@ class ReferralService extends Service {
         console.log(
           `用户 ${referredUserId} 已与他的团队长${referrerL2.referrer_id}绑定关系`
         );
-
-        // 给上级推荐人发放5个健康币
-        await ctx.service.points.saveNew({
-          user_id: referrerL2.referrer_id,
-          points: 5,
-        });
       }
 
       const result = await Referrals.saveNew({
@@ -185,11 +236,6 @@ class ReferralService extends Service {
         referralLevel: 1,
       });
 
-      // 给直接推荐人发放50个健康币
-      await ctx.service.points.saveNew({
-        user_id: referrerId,
-        points: 50,
-      });
       // 获取直接推荐人角色
       const getaReferrerRole = await UserRoles.getUserHighestRole(referrerId);
 

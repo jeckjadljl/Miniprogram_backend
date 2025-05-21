@@ -1,10 +1,8 @@
-const posters = require("./posters");
-
 /*
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-01 23:15:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-02 00:19:03
+ * @LastEditTime: 2025-05-13 23:49:40
  * @FilePath: \Mini_program_backend\app\schema\goods_specifications.js
  * @Description:
  *
@@ -25,13 +23,17 @@ module.exports = app => {
       type: STRING(38),
       allowNull: false,
     },
+    member_goods_id: {
+      type: STRING(38),
+      allowNull: true,
+    },
     specName: {
       type: STRING(255),
       allowNull: false,
     }, // 规格名称，例如 "颜色"、"尺寸"
     specValue: {
       type: STRING(255),
-      allowNull: false,
+      allowNull: true,
     }, // 规格值，例如 "红色"、"M码"
     specPrice: {
       type: DECIMAL(10, 2),
@@ -46,6 +48,14 @@ module.exports = app => {
       type: STRING(255), // 规格对应的缩略图
       allowNull: true,
     },
+    point_spend: {
+      type: DECIMAL(10, 2),
+      allowNull: true,
+    }, // 可直接设置可使用的健康币数量
+    cash_amount: {
+      type: DECIMAL(10, 2),
+      allowNull: true,
+    }, // 健康币兑换所需的现金
     specImages: {
       type: TEXT,
       get() {

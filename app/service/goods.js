@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 12:02:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-02 21:09:02
+ * @LastEditTime: 2025-04-27 20:23:39
  * @FilePath: \Mini_program_backend\app\service\goods.js
  * @Description:
  *
@@ -27,7 +27,8 @@ class GoodsService extends Service {
 
     if (goods.thumbnail && fs.existsSync(goods.thumbnail)) {
       const thumbnailBuffer = fs.readFileSync(goods.thumbnail); // 读取本地文件
-      const thumbnailKey = `thumbnail/${path.basename(goods.thumbnail)}`; // 存储路径
+      const md5 = await ctx.service.cos.getBufferMD5(thumbnailBuffer); // 获取MD5
+      const thumbnailKey = `thumbnail/${md5}_${path.basename(goods.thumbnail)}`; // 存储路径
       uploadPromises.push(
         ctx.service.cos
           .uploadFile(thumbnailBuffer, thumbnailKey, "", "")
@@ -40,10 +41,11 @@ class GoodsService extends Service {
 
     // 处理 carousel 中的多张图片
     if (goods.carousel && Array.isArray(goods.carousel)) {
-      goods.carousel.forEach((carouselItem, index) => {
+      for (const [index, carouselItem] of goods.carousel.entries()) {
         if (fs.existsSync(carouselItem)) {
           const carouselBuffer = fs.readFileSync(carouselItem); // 读取本地文件
-          const carouselKey = `carousel/${path.basename(carouselItem)}`; // 存储路径
+          const md5 = await ctx.service.cos.getBufferMD5(carouselBuffer); // 获取MD5
+          const carouselKey = `carousel/${md5}_${path.basename(carouselItem)}`; // 存储路径
           uploadPromises.push(
             ctx.service.cos
               .uploadFile(carouselBuffer, carouselKey, "", "")
@@ -54,11 +56,12 @@ class GoodsService extends Service {
               })
           );
         }
-      });
+      }
     } else if (goods.carousel && fs.existsSync(goods.carousel)) {
       // 如果 goods.carousel 是单个字符串，也处理为单张图片
       const carouselBuffer = fs.readFileSync(goods.carousel); // 读取本地文件
-      const carouselKey = `carousel/${path.basename(goods.carousel)}`; // 存储路径
+      const md5 = await ctx.service.cos.getBufferMD5(carouselBuffer); // 获取MD5
+      const carouselKey = `carousel/${md5}_${path.basename(goods.carousel)}`; // 存储路径
       uploadPromises.push(
         ctx.service.cos
           .uploadFile(carouselBuffer, carouselKey, "", "")
@@ -71,7 +74,10 @@ class GoodsService extends Service {
 
     if (goods.imagesJsonStr && fs.existsSync(goods.imagesJsonStr)) {
       const imagesJsonStrBuffer = fs.readFileSync(goods.imagesJsonStr);
-      const imagesJsonStrKey = `posters/${path.basename(goods.imagesJsonStr)}`;
+      const md5 = await ctx.service.cos.getBufferMD5(imagesJsonStrBuffer); // 获取MD5
+      const imagesJsonStrKey = `posters/${md5}_${path.basename(
+        goods.imagesJsonStr
+      )}`;
       uploadPromises.push(
         ctx.service.cos
           .uploadFile(imagesJsonStrBuffer, imagesJsonStrKey, "", "")
@@ -84,10 +90,13 @@ class GoodsService extends Service {
 
     // 处理规格图片
     if (goods.spec && Array.isArray(goods.spec)) {
-      goods.spec.forEach(spec => {
+      for (const spec of goods.spec) {
         if (spec.specThumbnail && fs.existsSync(spec.specThumbnail)) {
           const thumbnailBuffer = fs.readFileSync(spec.specThumbnail); // 读取本地文件
-          const thumbnailKey = `thumbnail/${path.basename(spec.specThumbnail)}`; // 存储路径
+          const md5 = await ctx.service.cos.getBufferMD5(thumbnailBuffer); // 获取MD5
+          const thumbnailKey = `thumbnail/${md5}_${path.basename(
+            spec.specThumbnail
+          )}`; // 存储路径
           uploadPromises.push(
             ctx.service.cos
               .uploadFile(thumbnailBuffer, thumbnailKey, "", "")
@@ -99,10 +108,11 @@ class GoodsService extends Service {
         }
 
         if (spec.specImages && Array.isArray(spec.specImages)) {
-          spec.specImages.forEach((image, index) => {
+          for (const [index, image] of spec.specImages.entries()) {
             if (fs.existsSync(image)) {
               const imageBuffer = fs.readFileSync(image); // 读取本地文件
-              const imageKey = `carousel/${path.basename(image)}`; // 存储路径
+              const md5 = await ctx.service.cos.getBufferMD5(imageBuffer); // 获取MD5
+              const imageKey = `carousel/${md5}_${path.basename(image)}`; // 存储路径
               uploadPromises.push(
                 ctx.service.cos
                   .uploadFile(imageBuffer, imageKey, "", "")
@@ -112,11 +122,12 @@ class GoodsService extends Service {
                   })
               );
             }
-          });
+          }
         } else if (spec.specImages && fs.existsSync(spec.specImages)) {
           // 如果 spec.specImages 是单个字符串，也处理为单张图片
           const imageBuffer = fs.readFileSync(spec.specImages); // 读取本地文件
-          const imageKey = `carousel/${path.basename(spec.specImages)}`; // 存储路径
+          const md5 = await ctx.service.cos.getBufferMD5(imageBuffer); // 获取MD5
+          const imageKey = `carousel/${md5}_${path.basename(spec.specImages)}`; // 存储路径
           uploadPromises.push(
             ctx.service.cos
               .uploadFile(imageBuffer, imageKey, "", "")
@@ -129,10 +140,11 @@ class GoodsService extends Service {
 
         // 处理规格海报（新增逻辑）
         if (spec.specPosters && Array.isArray(spec.specPosters)) {
-          spec.specPosters.forEach((poster, index) => {
+          for (const [index, poster] of spec.specPosters.entries()) {
             if (fs.existsSync(poster)) {
               const posterBuffer = fs.readFileSync(poster); // 读取本地文件
-              const posterKey = `posters/${path.basename(poster)}`; // 存储路径
+              const md5 = await ctx.service.cos.getBufferMD5(posterBuffer); // 获取MD5
+              const posterKey = `posters/${md5}_${path.basename(poster)}`; // 存储路径
               uploadPromises.push(
                 ctx.service.cos
                   .uploadFile(posterBuffer, posterKey, "", "")
@@ -142,11 +154,12 @@ class GoodsService extends Service {
                   })
               );
             }
-          });
+          }
         } else if (spec.specPosters && fs.existsSync(spec.specPosters)) {
           // 如果 spec.specPosters 是单个字符串，也处理为单张图片
           const posterBuffer = fs.readFileSync(spec.specPosters); // 读取本地文件
-          const posterKey = `posters/${path.basename(spec.specPosters)}`; // 存储路径
+          const md5 = await ctx.service.cos.getBufferMD5(posterBuffer); // 获取MD5
+          const posterKey = `posters/${md5}_${path.basename(spec.specPosters)}`; // 存储路径
           uploadPromises.push(
             ctx.service.cos
               .uploadFile(posterBuffer, posterKey, "", "")
@@ -156,7 +169,7 @@ class GoodsService extends Service {
               })
           );
         }
-      });
+      }
     }
 
     try {
@@ -199,7 +212,8 @@ class GoodsService extends Service {
 
     if (goods.thumbnail && fs.existsSync(goods.thumbnail)) {
       const thumbnailBuffer = fs.readFileSync(goods.thumbnail); // 读取本地文件
-      const thumbnailKey = `thumbnail/${path.basename(goods.thumbnail)}`; // 存储路径
+      const md5 = await ctx.service.cos.getBufferMD5(thumbnailBuffer); // 获取MD5
+      const thumbnailKey = `thumbnail/${md5}_${path.basename(goods.thumbnail)}`; // 存储路径
       uploadPromises.push(
         ctx.service.cos
           .uploadFile(thumbnailBuffer, thumbnailKey, "", "")
@@ -212,10 +226,11 @@ class GoodsService extends Service {
 
     // 处理 carousel 中的多张图片
     if (goods.carousel && Array.isArray(goods.carousel)) {
-      goods.carousel.forEach((carouselItem, index) => {
+      for (const [index, carouselItem] of goods.carousel.entries()) {
         if (fs.existsSync(carouselItem)) {
           const carouselBuffer = fs.readFileSync(carouselItem); // 读取本地文件
-          const carouselKey = `carousel/${path.basename(carouselItem)}`; // 存储路径
+          const md5 = await ctx.service.cos.getBufferMD5(carouselBuffer); // 获取MD5
+          const carouselKey = `carousel/${md5}_${path.basename(carouselItem)}`; // 存储路径
           uploadPromises.push(
             ctx.service.cos
               .uploadFile(carouselBuffer, carouselKey, "", "")
@@ -226,11 +241,12 @@ class GoodsService extends Service {
               })
           );
         }
-      });
+      }
     } else if (goods.carousel && fs.existsSync(goods.carousel)) {
       // 如果 goods.carousel 是单个字符串，也处理为单张图片
       const carouselBuffer = fs.readFileSync(goods.carousel); // 读取本地文件
-      const carouselKey = `carousel/${path.basename(goods.carousel)}`; // 存储路径
+      const md5 = await ctx.service.cos.getBufferMD5(carouselBuffer); // 获取MD5
+      const carouselKey = `carousel/${md5}_${path.basename(goods.carousel)}`; // 存储路径
       uploadPromises.push(
         ctx.service.cos
           .uploadFile(carouselBuffer, carouselKey, "", "")
@@ -243,7 +259,10 @@ class GoodsService extends Service {
 
     if (goods.imagesJsonStr && fs.existsSync(goods.imagesJsonStr)) {
       const imagesJsonStrBuffer = fs.readFileSync(goods.imagesJsonStr);
-      const imagesJsonStrKey = `posters/${path.basename(goods.imagesJsonStr)}`;
+      const md5 = await ctx.service.cos.getBufferMD5(imagesJsonStrBuffer); // 获取MD5
+      const imagesJsonStrKey = `posters/${md5}_${path.basename(
+        goods.imagesJsonStr
+      )}`;
       uploadPromises.push(
         ctx.service.cos
           .uploadFile(imagesJsonStrBuffer, imagesJsonStrKey, "", "")
@@ -303,20 +322,19 @@ class GoodsService extends Service {
    * @param {string} orgUuid - 商家uuid
    * @return {object|null} - 查找结果
    */
-  async getGoodsWithCategory(orgUuid) {
+  async getGoodsWithCategory(uuid) {
     const { app } = this;
     const goodsList = [];
     const resultList = await app.model.Goods.getGoodsWithCategory({
-      orgUuid,
+      uuid,
       categoryAttributes: ["uuid", "name"],
       goodsAttributes: [
         "goods_id",
         "name",
         "category_id",
-        "spec",
         "thumbnail",
         "salePrice",
-        "unitName",
+        "orgUuid",
       ],
     });
 
@@ -356,10 +374,10 @@ class GoodsService extends Service {
         "name",
         "status",
         "unitName",
-        "spec",
         "goodsInfo",
         "salePrice",
         "thumbnail",
+        "carousel",
         "category_id",
       ],
     });
@@ -368,14 +386,17 @@ class GoodsService extends Service {
       for (const row of goodsData.rows) {
         const { category_id: uuid } = row || {};
         const { orgUuid } = params;
-        const goodsCategory = await app.model.GoodsCategory.get({
-          uuid,
-          orgUuid,
-          attributes: ["name"],
-        });
 
-        if (goodsCategory && !app._.isEmpty(goodsCategory)) {
-          row.dataValues.categoryName = goodsCategory.name;
+        if (uuid) {
+          const goodsCategory = await app.model.GoodsCategory.get({
+            uuid,
+            orgUuid,
+            attributes: ["name"],
+          });
+
+          if (goodsCategory && !app._.isEmpty(goodsCategory)) {
+            row.dataValues.categoryName = goodsCategory.name;
+          }
         }
       }
     }
@@ -391,18 +412,23 @@ class GoodsService extends Service {
   async get(params = {}) {
     const { app, ctx } = this;
     const goodsData = await app.model.Goods.get(params);
-    const { category_id, orgUuid } = goodsData.goodsInfo;
-    const goodsCategory = await app.model.GoodsCategory.get({
-      uuid: category_id,
-      orgUuid,
-      attributes: ["name"],
-    });
 
-    if (!app._.isEmpty(goodsData)) {
-      goodsData.goodsInfo.dataValues.categoryName = goodsCategory.name;
-    } else {
-      ctx.logger.warn(`商品分类信息不存在，category_id: ${category_id}`);
-      ctx.throw(200, "查询不到指定的商品");
+    const goodsInfo = goodsData?.goodsInfo || {};
+    const { category_id, orgUuid } = goodsData.goodsInfo;
+
+    // 当分类存在时获取分类名称
+    if (category_id) {
+      const goodsCategory = await app.model.GoodsCategory.get({
+        uuid: category_id,
+        orgUuid,
+        attributes: ["name"],
+      });
+
+      // 安全设置分类名称
+      if (goodsCategory && !app._.isEmpty(goodsCategory)) {
+        goodsInfo.dataValues = goodsInfo.dataValues || {};
+        goodsInfo.dataValues.categoryName = goodsCategory.name;
+      }
     }
 
     return goodsData;
@@ -415,9 +441,29 @@ class GoodsService extends Service {
   }
 
   // 获取所有商品列表
-  async getAllGoods() {
-    const { Goods } = this.ctx.model;
+  async getAllGoods(params = {}) {
+    const { Goods, MemberGoods } = this.ctx.model;
+
+    // 获取所有已存在的会员商品ID
+    const existingMemberGoods = await MemberGoods.findAll({
+      attributes: ["goods_id"],
+      where: {
+        goods_id: {
+          [this.app.Sequelize.Op.ne]: null, // 排除 NULL 值
+        },
+      },
+      raw: true,
+    });
+    console.log("existingMemberGoods:", existingMemberGoods);
+
+    const excludeMemberIds = existingMemberGoods
+      .map(item => item.goods_id)
+      .filter(id => id !== null && id !== undefined); // 新增过滤逻辑;
+    console.log("excludeIds:", excludeMemberIds);
+
     return await Goods.getAllGoods({
+      ...params,
+      excludeMemberIds,
       attributes: [
         "goods_id",
         "version",

@@ -10,12 +10,13 @@ module.exports = app => {
   });
 
   Elements.associate = function () {
-    const { GoodsCategory, Posters } = model;
+    const { GoodsCategory, Posters, Video } = model;
     Elements.hasMany(GoodsCategory, {
       as: "categories",
       foreignKey: "elements_id",
     });
     Elements.hasMany(Posters, { as: "posterList", foreignKey: "elements_id" });
+    Elements.hasMany(Video, { as: "videoList", foreignKey: "elements_id" });
   };
 
   /**

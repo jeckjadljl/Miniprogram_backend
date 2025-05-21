@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-02 19:15:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-24 10:03:48
+ * @LastEditTime: 2025-04-24 11:08:51
  * @FilePath: \Mini_program_backend\app\service\cos.js
  * @Description:
  *
@@ -212,6 +212,10 @@ class CosService extends Service {
         }
       );
     });
+  }
+
+  async getBufferMD5(buffer) {
+    return crypto.createHash("md5").update(buffer).digest("hex");
   }
 
   /**

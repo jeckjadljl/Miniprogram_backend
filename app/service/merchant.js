@@ -16,6 +16,13 @@ class MerchantService extends Service {
    * @return {object|null} - 查找结果
    */
   async getMerchantByLogin(userName, password) {
+    console.log(
+      "MD5加密验证 - 原始密码:",
+      password,
+      "哈希结果:",
+      md5(password)
+    );
+
     return await this.app.mysql.get("merchant", {
       userName,
       password: md5(password),

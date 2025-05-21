@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-08 23:27:05
+ * @LastEditTime: 2025-05-21 20:38:21
  * @FilePath: \Mini_program_backend\app\model\member_goods.js
  * @Description:
  *
@@ -18,13 +18,28 @@ module.exports = app => {
   });
 
   MemberGoods.associate = function () {
-    const { OrderItem, Permissions, MemberPrivileges } = model;
+    const {
+      OrderItem,
+      Permissions,
+      MemberPrivileges,
+      Promotion,
+      GoodsPromotion,
+      Goods,
+    } = model;
     MemberGoods.hasMany(OrderItem, { foreignKey: "member_goods_id" });
     MemberGoods.belongsToMany(Permissions, {
       through: MemberPrivileges,
       foreignKey: "member_goods_id",
       otherKey: "permissions_id",
       as: "privileges",
+    });
+    MemberGoods.belongsToMany(Promotion, {
+      through: GoodsPromotion,
+      foreignKey: "member_goods_id",
+      otherKey: "promotion_id",
+    });
+    MemberGoods.belongsTo(Goods, {
+      foreignKey: "goods_id", // 这里应是 member_goods 表指向 goods 表的外键
     });
   };
 
@@ -44,12 +59,14 @@ module.exports = app => {
    * @return {string} - 商品uuid
    */
   MemberGoods.saveModify = async goods => {
-    const { goods_id } = goods;
-    const result = await MemberGoods.update(goods, { where: { goods_id } });
+    const { member_goods_id } = goods;
+    const result = await MemberGoods.update(goods, {
+      where: { id: member_goods_id },
+    });
 
     checkUpdate(result);
 
-    return goods_id;
+    return member_goods_id;
   };
 
   MemberGoods.getGoodsByCardId = async params => {
@@ -59,7 +76,10 @@ module.exports = app => {
 
   // 获取所有商品列表
   MemberGoods.getAllGoods = async ({ attributes }) => {
-    return await MemberGoods.findAll({ attributes });
+    return await MemberGoods.findAll({
+      where: { member_goods_status: "up" },
+      attributes,
+    });
   };
 
   MemberGoods.getMemberGoodsList = async ({
@@ -76,7 +96,7 @@ module.exports = app => {
       limit,
       order,
       attributes: memberGoodsAttributes,
-      where: {}, // 初始化where对象
+      where: { member_goods_status: "up" }, // 初始化where对象
     };
 
     if (status) {
@@ -114,6 +134,18 @@ module.exports = app => {
       pageSize: limit,
       data: result,
     };
+  };
+
+  MemberGoods.getByPromotion = async promotionName => {
+    return await MemberGoods.findAll({
+      include: [
+        {
+          model: model.Promotion,
+          where: { name: promotionName },
+          through: { attributes: [] },
+        },
+      ],
+    });
   };
 
   return MemberGoods;

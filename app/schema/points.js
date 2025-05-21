@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-24 12:11:43
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-16 17:02:25
+ * @LastEditTime: 2025-04-26 16:14:34
  * @FilePath: \Mini_program_backend\app\schema\points.js
  * @Description:
  *
@@ -39,6 +39,10 @@ module.exports = app => {
     },
     source: {
       type: STRING(50),
+      allowNull: true,
+    },
+    source_id: {
+      type: STRING(38),
       allowNull: true,
     },
     description: {
