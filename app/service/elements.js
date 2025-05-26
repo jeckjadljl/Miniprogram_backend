@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-21 11:55:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-24 22:05:18
+ * @LastEditTime: 2025-05-26 16:32:32
  * @FilePath: \Mini_program_backend\app\service\elements.js
  * @Description:
  *
@@ -95,6 +95,7 @@ class ElementsService extends Service {
         "version",
         "elements_id",
         "name",
+        "sort_order",
         "createdTime",
         "lastModifiedTime",
       ],

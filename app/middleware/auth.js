@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-20 21:03:08
+ * @LastEditTime: 2025-05-27 00:02:44
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -31,6 +31,7 @@ module.exports = options => {
       "/referral/getReferred",
       "/referral/saveNew",
       "/user/uploadAvatar",
+      "/user/getUserByUuid",
       "/elements/saveNew",
       "/elements/getAll",
       "/elements/get",
@@ -60,6 +61,7 @@ module.exports = options => {
       "/bill/order/query",
       "/posters/getHomeCarousel",
       "/address/saveNewAddress",
+      "/address/saveModifyAddress",
       "/referral/getRefererCount",
       "/membership/upgradeMembershipLevel",
       "/payments/queryOrder",
@@ -90,6 +92,7 @@ module.exports = options => {
       "/group/saveNew",
       "/order/getUserOrders",
       "/promotion/saveModify",
+      "/memberGoods/validateExchange",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

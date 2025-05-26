@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:07:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-06 16:35:22
+ * @LastEditTime: 2025-05-24 17:09:06
  * @FilePath: \Mini_program_backend\app\schema\orders.js
  * @Description:
  *
@@ -78,6 +78,19 @@ module.exports = app => {
       "remark",
       "canceled"
     ),
+    order_type: {
+      type: ENUM(
+        "normal",
+        "points_exchange",
+        "mixed_exchange",
+        "group_buy",
+        "presale",
+        "special offer"
+      ),
+      allowNull: false,
+      defaultValue: "normal",
+      comment: "订单类型：normal-普通订单, points_exchange-积分兑换订单",
+    },
     billNumber: {
       type: STRING(38),
       allowNull: false,

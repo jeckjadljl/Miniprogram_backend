@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-26 16:53:04
+ * @LastEditTime: 2025-05-26 11:56:57
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -182,10 +182,11 @@ class ReferralService extends Service {
     return result;
   }
 
-  async getReferrer(promotionCodeId) {
+  async getReferrer(promotionCodeId, referrer_id) {
     const { Qrcode } = this.ctx.model;
     const getReferrer = await Qrcode.getReferrer({
       promotionCodeId,
+      referrer_id,
       attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
     });
     if (!getReferrer) {
@@ -248,7 +249,9 @@ class ReferralService extends Service {
       };
     }
     // 已有推荐关系
-    throw new Error("该用户已有推荐关系，无法再与当前推荐人绑定关系");
+    const error = new Error("该用户已有推荐关系，无法再与当前推荐人绑定关系");
+    error.name = "DuplicateReferralError";
+    throw error;
   }
 
   async generateMiniProgramCode(referrerId) {
@@ -273,6 +276,7 @@ class ReferralService extends Service {
 
     const requestData = {
       scene: promotionCodeId, // 参数，限制 32 个可见字符（如推广码 ID）
+      page: "pages/login/index",
       width: 280, // 小程序码宽度
     };
 

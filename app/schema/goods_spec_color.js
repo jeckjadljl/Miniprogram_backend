@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-01 23:15:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-14 23:39:06
+ * @LastEditTime: 2025-05-23 22:55:08
  * @FilePath: \Mini_program_backend\app\schema\goods_spec_color.js
  * @Description:
  *
@@ -26,6 +26,10 @@ module.exports = app => {
     goods_id: {
       type: STRING(38),
       allowNull: false,
+    },
+    member_goods_id: {
+      type: STRING(38),
+      allowNull: true,
     },
     specName: {
       type: STRING(255),
@@ -58,6 +62,11 @@ module.exports = app => {
         );
       },
     }, // 规格对应的图片
+    sort_order: {
+      type: BIGINT,
+      allowNull: false,
+      defaultValue: 0,
+    },
     createdTime: {
       type: DATE,
       allowNull: false,

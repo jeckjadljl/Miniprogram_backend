@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:21:27
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-13 11:51:18
+ * @LastEditTime: 2025-05-24 21:11:33
  * @FilePath: \Mini_program_backend\app\service\member_goods.js
  * @Description:
  *
@@ -110,6 +110,50 @@ class Member_goodsService extends Service {
   async getByPromotionName(params = {}) {
     const { app } = this;
     return await app.model.MemberGoods.getByPromotionName(params);
+  }
+
+  // 验证兑换限制
+  async validateExchange(params = {}) {
+    const { memberGoodsId, userId } = params;
+    const { app, ctx } = this;
+    const memberGoods = await app.model.MemberGoods.findByPk(memberGoodsId);
+
+    console.log(memberGoods);
+    // 验证会员等级
+    if (memberGoods.require_premium === true) {
+      // 修正：添加 await 并处理空值情况
+      const userRole = await app.model.UserRoles.getUserHighestRole(userId);
+      if (userRole !== "premium") {
+        const error = new Error("该商品需要城市合伙人权限才能兑换");
+        error.name = "Permission_Limit";
+        throw error;
+      }
+    }
+
+    // 验证月度兑换限制
+    if (memberGoods.deduction_type === "points") {
+      const lastExchange = await app.model.Order.findOne({
+        where: {
+          user_id: userId,
+          order_type: "points_exchange",
+          order_status: "completed", // 只统计已完成订单
+        },
+        order: [["createdTime", "DESC"]],
+      });
+
+      if (lastExchange) {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+        if (lastExchange.createdTime > oneMonthAgo) {
+          const error = new Error("每月仅可兑换一次纯健康币商品");
+          error.name = "Exchange_Time_Limit";
+          throw error;
+        }
+      }
+    }
+
+    return true;
   }
 }
 

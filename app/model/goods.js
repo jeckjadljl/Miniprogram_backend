@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-21 20:33:00
+ * @LastEditTime: 2025-05-26 20:23:38
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -83,6 +83,7 @@ module.exports = app => {
           specImages: item.specImages || null,
           specPosters: item.specPosters || null,
           isDefault: item.isDefault,
+          sort_order: item.sort_order,
         }));
 
         await model.GoodsSpecifications.bulkCreate(goodsSpec, { transaction });
@@ -202,6 +203,7 @@ module.exports = app => {
             "specName",
             "specValue",
             "specPrice",
+            "sort_order", // 新增排序字段到返回结果
             "stock",
             "specThumbnail",
             "point_spend",
@@ -218,15 +220,22 @@ module.exports = app => {
             "uuid",
             "goods_id",
             "spec_id",
+            "member_goods_id",
             "specName",
             "specValue",
             "specPrice",
             "specColorThumbnail",
             "specColorImages",
+            "sort_order", // 新增排序字段到返回结果
           ],
           as: "specColor",
         },
       ],
+      order: [
+        [{ model: model.GoodsSpecifications, as: "spec" }, "sort_order", "ASC"],
+        [{ model: model.GoodsSpecColor, as: "specColor" }, "sort_order", "ASC"],
+      ],
+      logging: console.log, // 启用日志记录
     });
 
     if (!goodsInfo) {

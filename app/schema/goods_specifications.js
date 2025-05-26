@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-01 23:15:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-13 23:49:40
+ * @LastEditTime: 2025-05-24 00:00:09
  * @FilePath: \Mini_program_backend\app\schema\goods_specifications.js
  * @Description:
  *
@@ -56,6 +56,11 @@ module.exports = app => {
       type: DECIMAL(10, 2),
       allowNull: true,
     }, // 健康币兑换所需的现金
+    sort_order: {
+      type: BIGINT,
+      allowNull: false,
+      defaultValue: 0,
+    },
     specImages: {
       type: TEXT,
       get() {

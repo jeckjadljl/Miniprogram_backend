@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-08 17:12:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-21 10:49:32
+ * @LastEditTime: 2025-05-26 17:30:08
  * @FilePath: \Mini_program_backend\app\schema\goods_category.js
  * @Description:
  *
@@ -51,11 +51,16 @@ module.exports = app => {
     },
     elements_id: {
       type: STRING(38),
-      allowNull: false,
+      allowNull: true,
     },
     orgUuid: {
       type: STRING(38),
       allowNull: false,
+    },
+    sort_order: {
+      type: BIGINT,
+      allowNull: false,
+      defaultValue: 0,
     },
     version: {
       type: BIGINT,

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-01-16 20:23:03
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-01 14:42:40
+ * @LastEditTime: 2025-05-23 17:07:41
  * @FilePath: \Mini_program_backend\app\model\qrcode.js
  * @Description:
  *
@@ -37,9 +37,11 @@ module.exports = app => {
     return await Qrcode.findOne({ where: { referrer_id: referrerId } });
   };
 
-  Qrcode.getReferrer = async ({ promotionCodeId, attributes }) => {
-    return await Qrcode.findOne({
-      where: { promotion_code: promotionCodeId },
+  Qrcode.getReferrer = async ({ promotionCodeId, referrer_id, attributes }) => {
+    const queryOptions = {
+      where: referrer_id
+        ? { referrer_id }
+        : { promotion_code: promotionCodeId },
       include: [
         {
           model: model.User,
@@ -47,7 +49,10 @@ module.exports = app => {
           as: "referrerInfo",
         },
       ],
-    });
+    };
+
+    const result = await Qrcode.findOne(queryOptions);
+    return result;
   };
 
   return Qrcode;

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:25:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-14 14:53:31
+ * @LastEditTime: 2025-05-24 21:11:58
  * @FilePath: \Mini_program_backend\app\controller\member_goods.js
  * @Description:
  *
@@ -51,6 +51,28 @@ class Member_goodsController extends Controller {
       ctx.request.body
     );
     this.success(result);
+  }
+
+  async validateExchange() {
+    const { ctx } = this;
+
+    try {
+      const result = await ctx.service.memberGoods.validateExchange(
+        ctx.request.body
+      );
+      this.success(result);
+    } catch (err) {
+      const { fields = {}, name, message } = err;
+      if (name === "Permission_Limit") {
+        this.fail(ctx.CONFLICT_CODE, message);
+      } else if (name === "Exchange_Time_Limit") {
+        this.fail(ctx.CONFLICT_CODE, message); // 自定义返回码
+      } else {
+        // 未捕获的错误抛出
+        ctx.logger.error(err); // 记录日志以便排查
+        this.fail(ctx.INTERNAL_ERROR_CODE, "服务器内部错误");
+      }
+    }
   }
 }
 

@@ -130,7 +130,6 @@ module.exports = app => {
           model: model.GoodsCategory,
           as: "categories",
           attributes: categoriesAttributes,
-          // where: { elements_id: uuid },
         },
         {
           model: model.Posters,
@@ -139,12 +138,19 @@ module.exports = app => {
           // where: { elements_id: uuid },
         },
       ],
+      order: [
+        // 对 GoodsCategory 的 sort_order 字段进行排序
+        [{ model: model.GoodsCategory, as: "categories" }, "sort_order", "ASC"],
+      ],
       where: { uuid, orgUuid },
     });
   };
 
   Elements.getAll = async ({ attributes }) => {
-    return await Elements.findAll({ attributes });
+    return await Elements.findAll({
+      attributes,
+      order: [["sort_order", "ASC"]], // 按照 sort_order 字段升序排序
+    });
   };
 
   return Elements;

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-21 10:41:53
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-22 21:59:23
+ * @LastEditTime: 2025-05-26 11:23:07
  * @FilePath: \Mini_program_backend\app\schema\elements.js
  * @Description:
  *
@@ -63,6 +63,11 @@ module.exports = app => {
     orgUuid: {
       type: STRING(38),
       allowNull: false,
+    },
+    sort_order: {
+      type: BIGINT,
+      allowNull: false,
+      defaultValue: 0,
     },
     lastModifiedTime: {
       type: DATE,

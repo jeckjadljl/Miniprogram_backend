@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-07 16:07:57
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-11 17:12:25
+ * @LastEditTime: 2025-05-24 17:09:40
  * @FilePath: \Mini_program_backend\app\schema\member_goods.js
  * @Description:
  *
@@ -11,7 +11,7 @@
 "use strict";
 
 module.exports = app => {
-  const { STRING, DECIMAL, INTEGER, UUIDV4, DATE, BIGINT, ENUM } =
+  const { STRING, DECIMAL, INTEGER, UUIDV4, DATE, BIGINT, ENUM, BOOLEAN } =
     app.Sequelize;
 
   return {
@@ -89,6 +89,12 @@ module.exports = app => {
       type: DECIMAL(10, 2),
       allowNull: true,
       defaultValue: 0.1, // 默认健康币汇率
+    },
+    require_premium: {
+      type: BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: "是否需要城市合伙人权限",
     },
     deduction_type: {
       type: ENUM("points", "mixed"),
