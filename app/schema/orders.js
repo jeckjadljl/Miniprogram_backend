@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:07:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-24 17:09:06
+ * @LastEditTime: 2025-06-04 16:19:05
  * @FilePath: \Mini_program_backend\app\schema\orders.js
  * @Description:
  *
@@ -75,7 +75,7 @@ module.exports = app => {
       "paid",
       "shipped",
       "completed",
-      "remark",
+      "review",
       "canceled"
     ),
     order_type: {

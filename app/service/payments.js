@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-25 16:25:26
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-21 20:09:01
+ * @LastEditTime: 2025-06-10 17:47:08
  * @FilePath: \Mini_program_backend\app\service\payments.js
  * @Description:
  *
@@ -86,13 +86,20 @@ class PaymentsService extends Service {
       if (responseData) {
         console.log("请求体数据：", JSON.parse(body));
 
+        // 判断是否是重新调起原有的支付订单
+        if (orderData.out_trade_no) {
+          console.log(`重新调起支付订单${orderData.out_trade_no}`);
+          const paymentParams = await wechatPayUtil.generatePaymentParams(
+            responseData.prepay_id
+          );
+          return paymentParams;
+        }
         // 将支付数据存储到数据库
         await this.savePaymentData(
           JSON.parse(body),
           orderData.business_order_id,
           responseData
         );
-
         // 生成调起支付参数并签名
         const paymentParams = await wechatPayUtil.generatePaymentParams(
           responseData.prepay_id
@@ -138,6 +145,35 @@ class PaymentsService extends Service {
 
       if (response.status === 204) {
         this.ctx.logger.info(`订单关闭成功: ${outTradeNo}`);
+
+        // ▼▼▼ 新增状态查询和更新逻辑 ▼▼▼
+        // 调用查询接口获取最新状态
+        const queryUrl = `/v3/pay/transactions/out-trade-no/${outTradeNo}?mchid=${mchId}`;
+        const queryAuth = await wechatPayUtil.getAuthorization("GET", queryUrl);
+
+        const queryResponse = await axios.get(
+          `https://api.mch.weixin.qq.com${queryUrl}`,
+          {
+            headers: {
+              Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${queryAuth.mchid}",nonce_str="${queryAuth.nonce_str}",signature="${queryAuth.signature}",timestamp="${queryAuth.timestamp}",serial_no="${queryAuth.serial_no}"`,
+            },
+          }
+        );
+
+        // 更新本地支付记录
+        await this.ctx.model.Payments.update(
+          {
+            trade_state: queryResponse.data.trade_state,
+            trade_state_desc: queryResponse.data.trade_state_desc,
+            payment_status:
+              queryResponse.data.trade_state === "CLOSED" ? "closed" : "unpaid",
+          },
+          {
+            where: { out_trade_no: outTradeNo },
+          }
+        );
+        // ▲▲▲ 新增逻辑结束 ▲▲▲
+
         return { success: true };
       }
       throw new Error(`关闭订单失败: ${response.status}`);
@@ -170,7 +206,7 @@ class PaymentsService extends Service {
 
       // 5. 准备支付参数
       const paymentParams = {
-        description: "满满严料铺-继续支付",
+        description: "满满严料铺",
         amount: { total: order.total_amount / 100 },
         payer: { openid: order.openId },
         business_order_id: orderIds,
@@ -178,6 +214,7 @@ class PaymentsService extends Service {
           ? this.generateOutTradeNo()
           : order.out_trade_no,
       };
+      console.log("准备支付参数:", paymentParams);
 
       // 6. 调用原有支付方法
       return await this.createPayment(paymentParams);
@@ -222,16 +259,91 @@ class PaymentsService extends Service {
     };
 
     // 保存到数据库
-    await ctx.model.Payments.saveNew(paymentData);
+    const result = await ctx.model.Payments.saveNew(paymentData);
 
-    // 新增30分钟后自动关闭任务（需要确保app.addDelayTask已定义）
-    this.ctx.app.addDelayTask(
-      "autoClosePaymentOrder",
-      paymentData.out_trade_no,
-      {},
-      1800 // 30分钟=1800秒
-    );
-    this.ctx.logger.info(`支付数据保存成功: 订单号 ${business_order_id}`);
+    if (result) {
+      const autoCancelSeconds = 1800; // 保持与定时任务一致
+      const createdAt = new Date();
+
+      // 修改后的延迟任务添加逻辑 ▼▼▼
+      await ctx.service.bullmq.addDelayJob(
+        "taskQueue",
+        "closePaymentAndOrders", // 新任务类型
+        {
+          paymentId: result.uuid, // 支付记录ID
+          orderIds: businessOrderIds, // 全部订单ID数组
+          outTradeNo: out_trade_no, // 支付单号
+        },
+        autoCancelSeconds
+      );
+      this.ctx.logger.info(
+        `订单创建成功，已设置30分钟后自动取消: 包含订单 ${businessOrderIds.join(
+          ","
+        )}`
+      );
+
+      // 存储Redis时间戳
+      await ctx.service.redis.set(
+        `payments:${result.uuid}:createdAt`,
+        createdAt.getTime(),
+        autoCancelSeconds,
+        "order"
+      );
+      // 使用更精确的任务命名
+      // await ctx.service.bullmq.addDelayJob(
+      //   "taskQueue",
+      //   "closePayment",
+      //   {
+      //     outTradeNo: out_trade_no,
+      //   },
+      //   1800
+      // );
+
+      this.ctx.logger.info(
+        `支付数据保存成功: 支付记录 ${
+          result.uuid
+        } 包含订单 ${businessOrderIds.join(",")}`
+      );
+      return result;
+    }
+    throw new Error("Failed to save payment data");
+  }
+
+  async updatePaymentData(orderData) {
+    const { app, ctx } = this;
+    const { amount, out_trade_no, out_refund_no } = orderData;
+    const { total, refund } = amount;
+
+    const refundPaymentData = {
+      out_trade_no,
+      out_refund_no,
+      refund_amount: refund,
+    };
+
+    const result = await ctx.model.Payments.saveModify(refundPaymentData);
+    return result;
+  }
+
+  async getByOutTradeNo(params = {}) {
+    const { app } = this;
+    const { Payments } = app.model;
+    const result = Payments.getByOutTradeNo(params);
+    console.log("result", result);
+    return result;
+  }
+
+  async getByOrderIds(params = {}) {
+    const { app } = this;
+    const { Payments } = app.model;
+    const result = await Payments.getByOrderIds(params);
+    return result;
+  }
+
+  async getByUuid(uuid) {
+    const { app } = this;
+    const { Payments } = app.model;
+    const result = await Payments.getByUuid(uuid);
+    return result;
   }
 
   async getUnpaid(params = {}) {
@@ -242,6 +354,7 @@ class PaymentsService extends Service {
 
   async queryOrder(params = {}) {
     const { app, ctx } = this;
+    const { User } = app.model;
     const { mchId } = this.config;
     const { user_id, userName, orderIds, memberCartData } = params;
     console.log("查询订单IDs:", orderIds);
@@ -292,11 +405,11 @@ class PaymentsService extends Service {
         // 等待所有订单查询完成
         const orders = await Promise.all(orderPromises);
         // 计算总金额
-        // const totalAmount = orders.reduce(
-        //   (sum, order) => sum + order.payment_amount,
-        //   0
-        // );
-
+        const totalAmount = orders.reduce(
+          (sum, order) => sum + order.payment_amount,
+          0
+        );
+        await User.cumulativeSpent(user_id, totalAmount);
         console.log(orders);
         // 检查是否有订单包含会员卡
         const hasMemberCard = orders.some(order =>
@@ -436,17 +549,17 @@ class PaymentsService extends Service {
             }
 
             // ▼▼▼ 新增健康币扣减逻辑 ▼▼▼
-            if (item.points_amount && item.points_amount > 0) {
-              await ctx.service.points.subtract({
-                user_id: order.user_id,
-                points: item.points_amount, // 使用负数进行扣减
-                source: "order_deduction",
-                description: `订单 ${getorder.uuid} 健康币抵扣`,
-              });
-              this.ctx.logger.info(
-                `用户${order.user_id}扣减${item.points_amount}健康币，订单项ID: ${item.uuid}`
-              );
-            }
+            // if (item.points_amount && item.points_amount > 0) {
+            //   await ctx.service.points.subtract({
+            //     user_id: order.user_id,
+            //     points: item.points_amount, // 使用负数进行扣减
+            //     source: "order_deduction",
+            //     description: `订单 ${getorder.uuid} 健康币抵扣`,
+            //   });
+            //   this.ctx.logger.info(
+            //     `用户${order.user_id}扣减${item.points_amount}健康币，订单项ID: ${item.uuid}`
+            //   );
+            // }
           }
         }
         console.log("微信支付响应数据:", response.data);
@@ -545,6 +658,79 @@ class PaymentsService extends Service {
     return transaction_id;
   }
 
+  async updateRefundStatus(out_trade_no, updateData) {
+    const { app, ctx } = this;
+    const { GoodsSales } = this.ctx.model;
+    const {
+      // transaction_id,
+      payment_status,
+      refund_status,
+      out_refund_no,
+      refund_id,
+      refund_success_time,
+    } = updateData;
+
+    const payment = await app.model.Payments.findOne({
+      where: { out_trade_no },
+    });
+    if (!payment) {
+      throw new Error(`订单不存在: ${out_trade_no}`);
+    }
+
+    const getUser = await app.model.User.findOne({
+      where: { uuid: payment.user_id },
+    });
+    if (!getUser) {
+      throw new Error(`用户不存在: ${payment.user_id}`);
+    }
+
+    if (refund_status === "SUCCESS") {
+      // 更新订单状态
+      await payment.update({
+        payment_status,
+        refund_status,
+        out_refund_no,
+        refund_id,
+        refund_success_time,
+      });
+
+      // 获取所有关联订单
+      const orderPromises = payment.business_order_id.map(orderId =>
+        ctx.service.order.getOrderFromPayments({ uuid: orderId })
+      );
+      const orders = await Promise.all(orderPromises);
+
+      // 记录商品销量
+      if (orders && orders.length > 0) {
+        for (const order of orders) {
+          if (order && order.orderitems) {
+            for (const item of order.orderitems) {
+              try {
+                await GoodsSales.reverseSales(
+                  item.goods_id,
+                  item.spec,
+                  item.quantity
+                );
+                this.ctx.logger.info(
+                  `已恢复商品库存: 商品ID ${item.goods_id} 规格 ${item.spec} 数量 ${item.quantity}`
+                );
+              } catch (error) {
+                this.ctx.logger.error(
+                  `商品销量恢复失败：商品ID ${item.goods_id} 规格 ${item.spec} 数量 ${item.quantity}`,
+                  error
+                );
+              }
+            }
+          }
+        }
+      }
+
+      this.ctx.logger.info(
+        `退款成功: 订单号 ${out_refund_no}, 退款状态: ${refund_status}`
+      );
+    }
+  }
+
   async paymentsOrderQuery(goodsOrder = {}) {
     const { app, ctx } = this;
     try {
@@ -567,6 +753,7 @@ class PaymentsService extends Service {
         }
         console.log("创建支付订单成功：", payments);
         return {
+          autoCancelTime: order.autoCancelTime,
           orderIds: order.orderUuids,
           payments,
         };
@@ -576,6 +763,85 @@ class PaymentsService extends Service {
       this.ctx.logger.error("微信支付请求失败:", error);
       throw error;
     }
+  }
+
+  async refundPayments(params = {}) {
+    const { out_trade_no, reason, amount } = params;
+    const { notify_url } = this.config;
+    const url = "/v3/refund/domestic/refunds";
+    const method = "POST";
+
+    // 生成退款单号（规则与支付单号类似）
+    const out_refund_no = this.generateOutTradeNo().replace("MCH", "REF");
+
+    const body = JSON.stringify({
+      out_trade_no,
+      out_refund_no,
+      reason,
+      notify_url: `${notify_url}/refund`, // 使用独立的退款通知地址
+      amount: {
+        refund: Math.round(amount.refund * 100), // 转为分
+        total: Math.round(amount.total * 100), // 实际应查询原订单金额
+        currency: "CNY",
+      },
+    });
+
+    const wechatPayUtil = new WechatPayUtil(this.ctx);
+    const authData = await wechatPayUtil.getAuthorization(method, url, body);
+
+    try {
+      const response = await axios.post(
+        `https://api.mch.weixin.qq.com${url}`,
+        body,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${authData.mchid}",nonce_str="${authData.nonce_str}",signature="${authData.signature}",timestamp="${authData.timestamp}",serial_no="${authData.serial_no}"`,
+          },
+        }
+      );
+
+      // 更新本地退款状态
+      if (response.data) {
+        const result = await this.updatePaymentData(JSON.parse(body));
+        if (result) {
+          return response.data;
+        }
+      }
+      // await this.updateOrderStatus(out_trade_no, {
+      //   refund_status: "processing",
+      //   out_refund_no,
+      //   refund_id: response.data.refund_id,
+      // });
+    } catch (error) {
+      this.ctx.logger.error("微信退款请求失败:", error);
+      throw new Error(
+        `退款失败: ${error.response?.data?.message || error.message}`
+      );
+    }
+  }
+
+  async getAutoCancelTime(paymentId) {
+    const { app, ctx } = this;
+
+    // 获取订单专用的redis客户端
+    const redis = app.redis.get("order");
+
+    // 直接从Redis获取时间戳
+    const [createdTimestamp, ttl] = await Promise.all([
+      ctx.service.redis.get(`payments:${paymentId}:createdAt`, "order"),
+      redis.ttl(`payments:${paymentId}:createdAt`),
+    ]);
+
+    if (!createdTimestamp || ttl < 0) {
+      return { valid: false, remaining: null };
+    }
+
+    return {
+      valid: true,
+      remaining: ttl,
+      expiresAt: new Date(parseInt(createdTimestamp) + 1800 * 1000),
+    };
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 10:46:44
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-17 16:27:14
+ * @LastEditTime: 2025-06-08 10:29:51
  * @FilePath: \Mini_program_backend\app\service\membership.js
  * @Description:
  *
@@ -28,7 +28,10 @@ class MembershipService extends Service {
 
       // 查询用户总消费金额
       const totalSpent = await Order.sum("payment_amount", {
-        where: { user_id: userId },
+        where: {
+          user_id: userId,
+          order_status: "completed", // 只统计已完成订单
+        },
       });
 
       console.log(`用户 ${userId} 的总消费金额为：${totalSpent}`);

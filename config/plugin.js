@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-04 22:42:18
+ * @LastEditTime: 2025-06-02 23:35:29
  * @FilePath: \Mini_program_backend\config\plugin.js
  * @Description:
  *
@@ -49,8 +49,13 @@ module.exports = {
     package: "egg-socket.io",
   },
 
-  schedule: {
-    enable: true,
-    package: "egg-schedule",
-  },
+  // schedule: {
+  //   enable: true,
+  //   package: "egg-schedule",
+  // },
+
+  // bullmq: {
+  //   enable: true,
+  //   package: "egg-bullmq",
+  // },
 };

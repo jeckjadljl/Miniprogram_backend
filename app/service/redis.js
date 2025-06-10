@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-10 10:58:30
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-28 22:34:39
+ * @LastEditTime: 2025-06-03 23:05:39
  * @FilePath: \Mini_program_backend\app\service\redis.js
  * @Description:
  *
@@ -74,6 +74,16 @@ class RedisService extends Service {
       );
       return undefined;
     }
+  }
+
+  async incr(namespace, key) {
+    const client = this.getClient(namespace);
+    return client.incr(key);
+  }
+
+  async expire(namespace, key, seconds) {
+    const client = this.getClient(namespace);
+    return client.expire(key, seconds);
   }
 
   /**

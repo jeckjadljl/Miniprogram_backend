@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:21:27
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-24 21:11:33
+ * @LastEditTime: 2025-06-06 00:00:37
  * @FilePath: \Mini_program_backend\app\service\member_goods.js
  * @Description:
  *
@@ -136,7 +136,7 @@ class Member_goodsService extends Service {
         where: {
           user_id: userId,
           order_type: "points_exchange",
-          order_status: "completed", // 只统计已完成订单
+          // order_status: "completed", // 只统计已完成订单
         },
         order: [["createdTime", "DESC"]],
       });

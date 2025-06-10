@@ -74,6 +74,13 @@ class OrderController extends Controller {
     this.success(goodsOrderData);
   }
 
+  async getByUuid() {
+    const { ctx } = this;
+    const { uuid } = ctx.request.body;
+    const goodsOrder = await ctx.service.order.getByUuid(uuid);
+    this.success(goodsOrder);
+  }
+
   /**
    * 获取订单详情
    */
@@ -92,14 +99,8 @@ class OrderController extends Controller {
       goodsOrder: "object",
     };
     ctx.validate(rule);
-    const { orgUuid, goodsOrder, user_id, userName } = ctx.request.body;
-
-    const result = await ctx.service.order.saveNew(
-      orgUuid,
-      goodsOrder,
-      user_id,
-      userName
-    );
+    const { goodsOrder } = ctx.request.body;
+    const result = await ctx.service.order.saveNew(goodsOrder);
     this.success(result);
   }
 
@@ -129,6 +130,12 @@ class OrderController extends Controller {
     ctx.validate(rule);
     const uuid = await ctx.service.order.audit(ctx.request.body);
 
+    this.success(uuid);
+  }
+
+  async confirm() {
+    const { ctx } = this;
+    const uuid = await ctx.service.order.confirm(ctx.request.body);
     this.success(uuid);
   }
 

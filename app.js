@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-20 23:39:50
+ * @LastEditTime: 2025-06-06 11:26:16
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
@@ -13,9 +13,18 @@ require("dotenv").config();
 // const { v4: uuidv4 } = require("uuid");
 const md5 = require("md5");
 // const fecha = require("fecha");
+// const { createBullBoard } = require("@bull-board/api");
+// const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
+// const { KoaAdapter } = require("@bull-board/koa");
 
-const { ADMIN_USERNAME, ADMIN_PASSWORD, TENCENT_BUCKET, TENCENT_REGION } =
-  process.env;
+const {
+  ADMIN_USERNAME,
+  ADMIN_PASSWORD,
+  TENCENT_BUCKET,
+  TENCENT_REGION,
+  REDIS_HOST,
+  REDIS_PORT,
+} = process.env;
 
 class AppBootHook {
   constructor(app) {
@@ -32,6 +41,69 @@ class AppBootHook {
 
   async didLoad() {
     // 所有文件已加载，可以启动插件。
+    // 添加 redis 客户端
+    const Redis = require("ioredis");
+    const Redlock = require("redlock");
+
+    // 确保 Redis 配置存在
+    // if (!this.app.config.redis || !this.app.config.redis.client) {
+    //   this.app.logger.error("Redis configuration is missing");
+    //   throw new Error("Redis configuration is required");
+    // }
+
+    // 初始化 redis 实例
+    const redisClient = new Redis({
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+      password: "",
+      db: 0,
+    });
+
+    // 解决 ioredis v5+ 兼容性问题
+    redisClient.connect = redisClient.connect || (() => Promise.resolve());
+
+    // 创建 redlock 实例并挂载到 app 对象
+    const redlock = new Redlock(
+      [redisClient],
+      {
+        // 确保有合理的默认配置
+        driftFactor: 0.01,
+        retryCount: 3,
+        retryDelay: 200,
+        retryJitter: 200,
+      }
+      // ...(this.app.config.redlock.options || {})
+    );
+    this.app.redlock = redlock;
+
+    // 正确的错误处理（应监听 redlock 实例）
+    redlock.on("error", err => {
+      console.error("Redlock error:", err);
+      // 2. 使用错误名判断类型（4.2.0 没有 ResourceLockedError 导出）
+      if (err.name === "ResourceLockedError") {
+        this.app.logger.warn("[Redlock] Resource locked:", err.message);
+      } else {
+        this.app.logger.error("[Redlock] Critical error:", err);
+      }
+    });
+
+    // Redis 客户端基础错误处理
+    redisClient.on("error", error => {
+      this.app.logger.error("[Redis] Connection error:", error);
+    });
+
+    console.log("Redlock instance type:", redlock.constructor.name);
+    console.log("Lock method exists:", typeof redlock.lock === "function");
+
+    // 测试代码 - 验证 Redlock 是否工作
+    try {
+      const lock = await redlock.acquire(["test-resource"], 1000);
+      this.app.logger.info("✅ Redlock test: Lock acquired");
+      await lock.release();
+      this.app.logger.info("✅ Redlock test: Lock released");
+    } catch (err) {
+      this.app.logger.error("❌ Redlock test failed:", err);
+    }
   }
 
   async willReady() {
@@ -212,6 +284,48 @@ class AppBootHook {
   async didReady() {
     // worker 已准备就绪，可以执行操作
     // await this.app.runSchedule("task_name");
+    const { app } = this;
+    const ctx = app.createAnonymousContext();
+
+    // Add null-check before accessing queues
+    if (!app.bullmq) {
+      // Initialize bullmq service
+      ctx.service.bullmq;
+    }
+
+    // 初始化 BullMQ 处理器
+    const taskJobs = require("./app/job/task")(app);
+    const bullmqService = ctx.service.bullmq;
+
+    // 创建 worker 并绑定处理器
+    bullmqService.createWorker("taskQueue", async job => {
+      const { name, data } = job;
+      ctx.logger.info(`[Worker] 开始处理任务: ${name}`);
+
+      // 通过闭包传递 app 实例
+      const processor = taskJobs[name];
+      if (processor) {
+        await processor.call({ app, ctx }, job); // 绑定上下文
+      } else {
+        ctx.logger.warn(`未知任务类型: ${name}`);
+      }
+    });
+
+    // Modified queue initialization
+    // const queues = app.bullmq?.queues ? Object.values(app.bullmq.queues) : [];
+
+    // const serverAdapter = new KoaAdapter();
+    // serverAdapter.setBasePath("/admin/queues");
+
+    // const bullBoard = createBullBoard({
+    //   queues: queues.map(q => new BullMQAdapter(q)),
+    //   serverAdapter,
+    // });
+
+    // this.app.bullboard = bullBoard;
+    // this.app.router.get("/admin/queues", bullBoard.getRouter());
+
+    // app.logger.info("BullBoard 监控界面已启用: /admin/queues");
   }
 
   async serverDidReady() {

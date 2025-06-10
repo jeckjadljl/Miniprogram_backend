@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-27 00:02:44
+ * @LastEditTime: 2025-06-08 18:42:59
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -81,6 +81,7 @@ module.exports = options => {
       "/promotion/getAll",
       "/logistics/saveNew",
       "/logistics/updateWaybillToken",
+      "/logistics/queryTrace",
       "/cart/getCombinedCartList",
       "/memberCart/addGoodsToCart",
       "/promotion/getByActivityType",
@@ -93,6 +94,13 @@ module.exports = options => {
       "/order/getUserOrders",
       "/promotion/saveModify",
       "/memberGoods/validateExchange",
+      "/admin/queues",
+      "/orderReview/saveNew",
+      "/orderReview/saveLikes",
+      "/order/getByUuid",
+      "/order/confirm",
+      "/payments/:id/autoCancelTime",
+      "/payments/getByOutTradeNo",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-29 20:34:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-05 16:15:19
+ * @LastEditTime: 2025-06-08 12:18:40
  * @FilePath: \Mini_program_backend\app\service\logistics.js
  * @Description:
  *
@@ -11,7 +11,6 @@
 "use strict";
 
 const axios = require("axios");
-
 const Service = require("egg").Service;
 
 class LogisticsService extends Service {
@@ -79,42 +78,188 @@ class LogisticsService extends Service {
         { waybill_token: response.data.waybill_token },
         { where: { orderitem_id: orderId } }
       );
-      return response.data;
+      return response.data.waybill_token;
     }
     throw new Error("上传运单信息失败");
   }
 
-  async queryTrace(orderId) {
-    const { ctx } = this;
-    const order = await ctx.model.Order.findByPk(orderId, {
+  async queryTrace(orderitem_id) {
+    const { ctx, app } = this;
+    const orderitem = await ctx.model.OrderItem.findByPk(orderitem_id, {
       include: [
         {
           model: ctx.model.Logistics,
-          attributes: ["uuid"],
+          as: "logistic",
         },
       ],
     });
-    if (!order || !order.waybill_token) {
-      throw new Error("订单不存在或未上传运单信息");
+
+    if (!orderitem) {
+      throw new Error(`订单项[${orderitem_id}]不存在`);
     }
+
+    const logistics = orderitem.logistic;
+    console.log("logistics:", logistics);
 
     const accessToken = await this.jwt.getAccessToken();
-    const url = `https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/query_trace?access_token=${accessToken}`;
-    const data = {
-      waybill_token: order.waybill_token,
-    };
-    const response = await axios.post(url, data);
-    if (
-      response.status === 200 &&
-      response.data &&
-      response.data.waybill_info
-    ) {
-      return response.data;
+    const response = await axios.post(
+      `https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/query_trace?access_token=${accessToken}`,
+      { waybill_token: logistics.waybill_token }
+    );
+
+    if (response.data.errcode) {
+      ctx.logger.error(
+        `物流查询失败[${logistics.uuid}]:`,
+        response.data.errmsg
+      );
     }
-    throw new Error("查询运单信息失败");
+
+    return await app.transaction(async transaction => {
+      console.log("response.data:", response.data);
+      // 更新物流状态
+      if (response.data.waybill_info?.status) {
+        const [logisticsUpdatedCount] = await ctx.model.Logistics.update(
+          {
+            logistics_status: response.data.waybill_info.status,
+            last_checked_time: new Date(),
+            check_count: ctx.app.Sequelize.literal("check_count + 1"),
+          },
+          {
+            where: { uuid: logistics.uuid },
+            transaction,
+          }
+        );
+        if (logisticsUpdatedCount === 0) {
+          ctx.logger.warn(
+            `Logistics record with uuid ${logistics.uuid} not found`
+          );
+        }
+
+        // 更新订单项状态
+        const [orderitemUpdatedCount] = await ctx.model.OrderItem.update(
+          {
+            status: this.mapLogisticsStatus(response.data.waybill_info.status),
+          },
+          {
+            where: {
+              uuid: orderitem_id,
+              status: "paid", // 只更新已支付状态的订单
+            },
+            transaction,
+          }
+        );
+        if (orderitemUpdatedCount === 0) {
+          ctx.logger.warn(
+            `OrderItem record with uuid ${orderitem_id} not found`
+          );
+        }
+
+        // 添加调试日志
+        ctx.logger.info("开始更新物流状态", {
+          orderitem_id,
+          wx_status: response.data.waybill_info.status,
+          mapped_status: this.mapLogisticsStatus(
+            response.data.waybill_info.status
+          ),
+        });
+
+        // 更新主订单状态（根据所有订单项的状态）
+        await ctx.model.Order.update(
+          {
+            order_status: this.mapLogisticsStatus(
+              response.data.waybill_info.status
+            ),
+          },
+          {
+            where: {
+              uuid: orderitem.order_id,
+              status: "paid", // 只更新已支付状态的订单
+            },
+            transaction,
+          }
+        );
+
+        return { message: "物流状态更新完成" };
+      }
+      this.logger.error("物流查询失败:", response.data.errmsg);
+    });
+
+    // const accessToken = await this.jwt.getAccessToken();
+    // const url = `https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/query_trace?access_token=${accessToken}`;
+    // const data = {
+    //   waybill_token: order.orderitems.logistic.waybill_token,
+    // };
+    // const response = await axios.post(url, data);
+    // console.log(response.status, response.data);
+    // if (
+    //   response.status === 200 &&
+    //   response.data &&
+    //   response.data.waybill_info
+    // ) {
+    //   const logisticsStatus = response.data.waybill_info.status;
+    //   await ctx.model.Logistics.update(
+    //     {
+    //       last_checked_time: new Date(),
+    //       check_count: ctx.app.Sequelize.literal("check_count + 1"),
+    //       logistics_status: logisticsStatus,
+    //     },
+    //     { where: { orderitem_id: order.orderitems.uuid } }
+    //   );
+
+    //   console.log(`订单${orderId}物流状态更新为${logisticsStatus}`);
+    //   // 微信物流状态码建议明确判断：
+    //   const WX_LOGISTICS_STATUS = {
+    //     ON_WAY: 2, // 运输中
+    //     DELIVERING: 3, // 派件中
+    //     DELIVERED: 4, // 已签收
+    //   };
+    //   if (
+    //     [
+    //       WX_LOGISTICS_STATUS.ON_WAY,
+    //       WX_LOGISTICS_STATUS.DELIVERING,
+    //       WX_LOGISTICS_STATUS.DELIVERED,
+    //     ].includes(logisticsStatus)
+    //   ) {
+    //     return await app.transaction(async transaction => {
+    //       const modifyInfo = app.getModifyInfo(order.user_id, order.userName);
+    //       const modify = await ctx.model.Order.update(
+    //         {
+    //           order_status: "shipped",
+    //           ...modifyInfo,
+    //         },
+    //         {
+    //           where: { uuid: order.uuid, user_id: order.user_id },
+    //           transaction,
+    //         }
+    //       );
+
+    //       // 新增订单项状态更新 ▼▼▼
+    //       await ctx.model.OrderItem.update(
+    //         { status: "shipped" },
+    //         {
+    //           where: { order_id: order.uuid, uuid: order.orderitems.uuid },
+    //           transaction, // 使用相同事务
+    //         }
+    //       );
+    //     });
+    //   }
+    //   return response.data;
+    // }
+    // throw new Error("查询运单信息失败");
   }
 
-  async getPaymentInfoByLogistics(logisticsId, orderId) {
+  // 新增状态映射方法
+  mapLogisticsStatus(wxStatus) {
+    const STATUS_MAP = {
+      2: "shipped", // 运输中
+      3: "shipped", // 派件中
+      4: "shipped", // 已签收
+      5: "shipped", // 异常
+    };
+    return STATUS_MAP[wxStatus];
+  }
+
+  async getPaymentInfoByLogistics(logisticsId) {
     const { ctx, app } = this;
     const { Sequelize } = app;
 
@@ -124,6 +269,7 @@ class LogisticsService extends Service {
       include: [
         {
           model: ctx.model.OrderItem,
+          as: "orderitem",
           attributes: ["uuid", "name", "thumbnail"],
         },
       ],
@@ -154,7 +300,7 @@ class LogisticsService extends Service {
             Sequelize.fn(
               "JSON_CONTAINS",
               Sequelize.col("business_order_id"),
-              app.Sequelize.literal(`'${JSON.stringify([orderId])}'`)
+              app.Sequelize.literal(`'${JSON.stringify([logistics.order_id])}'`)
             ),
             "=",
             1
@@ -163,6 +309,7 @@ class LogisticsService extends Service {
       },
     });
     console.log("查询订单支付记录:", paymentsInfo);
+    console.log("物流信息:", logistics);
     return {
       logistics,
       paymentsInfo,
@@ -179,6 +326,8 @@ class LogisticsService extends Service {
       ...crateInfo,
       // userName, // 确保传递用户名
       // user_id, // 确保传递用户ID
+      user_id,
+      userName,
       orgUuid,
     };
 
@@ -186,16 +335,29 @@ class LogisticsService extends Service {
     return result;
   }
 
-  async updateWaybillToken(logisticsId, orderId) {
+  async updateWaybillToken(logisticsId) {
     const { ctx } = this;
     try {
       // 新增支付信息获取
-      const result = await this.getPaymentInfoByLogistics(logisticsId, orderId);
+      const result = await this.getPaymentInfoByLogistics(logisticsId);
 
       if (!result) {
         ctx.logger.error(`物流记录不存在：${logisticsId}`);
         return;
       }
+      // 添加运单存在性检查
+      if (!result.logistics?.waybill_id) {
+        this.ctx.logger.error(`物流记录缺少运单号：${logisticsId}`);
+        return null;
+      }
+      // 如果已获取waybill_token就直接返回
+      // if (result.logistics.waybill_token) {
+      //   const waybill_token = result.logistics.waybill_token;
+      //   return {
+      //     waybill_token,
+      //     orderitemId: result.logistics.orderitem.uuid,
+      //   };
+      // }
       const goodsData = {
         goods_name: result.logistics.orderitem.name,
         goods_img_url: result.logistics.orderitem.thumbnail,
@@ -210,7 +372,10 @@ class LogisticsService extends Service {
         transId: result.paymentsInfo.transaction_id,
       });
 
-      return response;
+      return {
+        waybill_token: response,
+        orderitemId: result.logistics.orderitem.uuid,
+      };
     } catch (error) {
       ctx.logger.error(`更新物流信息失败：${error.message}`);
     }

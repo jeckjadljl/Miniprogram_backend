@@ -1,10 +1,8 @@
-const { includes } = require("lodash");
-
 /*
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-22 18:07:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-19 23:51:32
+ * @LastEditTime: 2025-06-09 12:04:54
  * @FilePath: \Mini_program_backend\app\model\order.js
  * @Description:
  *
@@ -137,9 +135,15 @@ module.exports = app => {
     orderAttributes,
     orderLineAttributes,
     orderAddressAttributes,
+    logisticsAttributes,
     uuid,
     orgUuid,
   }) => {
+    const where = { uuid };
+    // 添加 orgUuid 条件
+    if (orgUuid !== null && orgUuid !== undefined) {
+      where.orgUuid = orgUuid;
+    }
     return await Order.findOne({
       attributes: orderAttributes,
       include: [
@@ -152,6 +156,11 @@ module.exports = app => {
               model: model.MemberGoods,
               as: "membergoods", // 新增会员商品关联
             },
+            {
+              model: model.Logistics,
+              as: "logistic",
+              attributes: logisticsAttributes,
+            },
           ],
         },
         {
@@ -160,7 +169,7 @@ module.exports = app => {
           attributes: orderAddressAttributes,
         },
       ],
-      where: { uuid, orgUuid },
+      where,
     });
   };
 
@@ -317,16 +326,34 @@ module.exports = app => {
   };
 
   /**
+   * 确认订单
+   * @param {object} params - 条件
+   * @return {string} - 订单uuid
+   */
+  Order.confirm = async params => {
+    const { uuid, lastModifierId, lastModifierName } = params;
+    const result = await Order.update(
+      { order_status: "review", lastModifierId, lastModifierName },
+      {
+        where: { uuid, order_status: "shipped" },
+      }
+    );
+    checkUpdate(result);
+
+    return uuid;
+  };
+
+  /**
    * 完成订单
    * @param {object} params - 条件
    * @return {string} - 订单uuid
    */
   Order.complete = async params => {
-    const { uuid, orgUuid, lastModifierId, lastModifierName } = params;
+    const { uuid, lastModifierId, lastModifierName } = params;
     const result = await Order.update(
       { order_status: "completed", lastModifierId, lastModifierName },
       {
-        where: { uuid, orgUuid, order_status: "shipped" },
+        where: { uuid, order_status: "review" },
       }
     );
     checkUpdate(result);
@@ -401,7 +428,13 @@ module.exports = app => {
     };
 
     if (status) {
-      condition.where.order_status = status;
+      if (status === "all") {
+        condition.where.order_status = {
+          [Op.in]: ["canceled", "completed"],
+        };
+      } else {
+        condition.where.order_status = status;
+      }
     }
 
     // 日期范围过滤

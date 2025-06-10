@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-19 09:48:58
+ * @LastEditTime: 2025-06-06 11:10:26
  * @FilePath: \Mini_program_backend\config\config.default.js
  * @Description:
  *
@@ -165,6 +165,15 @@ module.exports = appInfo => {
         password: "",
         db: 4,
       },
+    },
+  };
+
+  config.redlock = {
+    options: {
+      driftFactor: 0.01, // 时钟漂移因子
+      retryCount: 10, // 重试次数
+      retryDelay: 300,
+      retryJitter: 300,
     },
   };
 

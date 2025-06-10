@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-24 16:34:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-26 17:21:17
+ * @LastEditTime: 2025-06-10 01:15:15
  * @FilePath: \Mini_program_backend\app\model\points.js
  * @Description:
  *
@@ -56,9 +56,9 @@ module.exports = app => {
     return point.uuid;
   };
 
-  Points.getPointsByReferral = async ({ user_id }) => {
+  Points.getPointsByReferral = async ({ user_id, source, source_id }) => {
     const points = await Points.findOne({
-      where: { user_id, source: "referral" },
+      where: { user_id, source, source_id },
     });
 
     return points;

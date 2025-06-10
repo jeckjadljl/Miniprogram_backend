@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 17:23:38
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-20 12:09:51
+ * @LastEditTime: 2025-06-09 23:46:03
  * @FilePath: \Mini_program_backend\app\service\order.js
  * @Description:
  *
@@ -89,6 +89,7 @@ class OrderService extends Service {
         "deliveryTimeTypeRemark",
         "remark",
         "createdTime",
+        "lastModifiedTime",
         "userName",
         [
           Sequelize.fn("ROUND", Sequelize.col("order.total_amount"), 2),
@@ -153,6 +154,18 @@ class OrderService extends Service {
         "detail",
         "is_default",
       ],
+      logisticsAttributes: [
+        "uuid",
+        "userName",
+        "user_id",
+        "orgUuid",
+        "orderitem_id",
+        "order_id",
+        "waybill_id",
+        "receiver_phone",
+        "delivery_id",
+        "logistics_status",
+      ],
     });
 
     if (app._.isEmpty(orderData)) {
@@ -211,7 +224,8 @@ class OrderService extends Service {
     const totalAmount = calculateTotalAmount(ordersList);
     console.log(`所有订单的总金额: ${totalAmount}`);
 
-    await User.cumulativeSpent(user_id, totalAmount);
+    // await User.cumulativeSpent(user_id, totalAmount);
+    const autoCancelSeconds = 1800; // 保持与定时任务一致
 
     // 处理每个订单
     const orderUuids = [];
@@ -232,8 +246,22 @@ class OrderService extends Service {
       const orderUuid = await Order.saveNew(processedOrder);
       if (orderUuid) {
         orderUuids.push(orderUuid);
+        this.ctx.logger.info(`订单创建成功: ${orderUuid}`);
+        // 添加30分钟后取消订单的延迟任务
+        // await ctx.service.bullmq.addDelayJob(
+        //   "taskQueue",
+        //   "orderCancel",
+        //   {
+        //     id: orderUuid,
+        //     userId: user_id,
+        //   },
+        //   30 * 60 // 5分钟（测试，单位：秒）
+        // );
+        // this.ctx.logger.info(
+        //   `订单创建成功，已设置30分钟后自动取消: ${orderUuid}`
+        // );
         // 超过30分钟自动取消订单
-        app.addDelayTask("cancelOrder", orderUuid, {}, 1800);
+        // app.addDelayTask("cancelOrder", orderUuid, {}, 1800);
         // 推送新订单消息
         // await service.notice.send("new_order", {
         //   title: "新订单",
@@ -248,6 +276,7 @@ class OrderService extends Service {
       openid: user.openid,
       totalAmount,
       orderUuids,
+      autoCancelTime: autoCancelSeconds,
     };
   }
 
@@ -313,6 +342,7 @@ class OrderService extends Service {
         "voucher_name",
         "voucher_quantity",
         "points",
+        "status",
       ],
     });
 
@@ -390,18 +420,32 @@ class OrderService extends Service {
   }
 
   /**
+   * 确认订单
+   * @param {object} params - 条件
+   * @return {string} - 订单uuid
+   */
+  async confirm(params = {}) {
+    const { app } = this;
+    const { user_id, userName } = params;
+    const modifyInfo = app.getModifyInfo(user_id, userName);
+    return await app.model.Order.confirm({
+      ...params,
+      ...modifyInfo,
+    });
+  }
+
+  /**
    * 完成订单
    * @param {object} params - 条件
    * @return {string} - 订单uuid
    */
   async complete(params = {}) {
     const { app } = this;
-    const { user_id, userName, orgUuid } = params;
+    const { user_id, userName } = params;
     const modifyInfo = app.getModifyInfo(user_id, userName);
     return await app.model.Order.complete({
       ...params,
       ...modifyInfo,
-      orgUuid,
     });
   }
 
@@ -446,6 +490,8 @@ class OrderService extends Service {
           "discount_amount",
         ],
         "orgUuid",
+        "lastModifiedTime",
+        "createdTime",
       ],
       orderLineAttributes: [
         "uuid",

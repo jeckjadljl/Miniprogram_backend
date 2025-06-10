@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-25 12:11:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-13 00:36:58
+ * @LastEditTime: 2025-06-09 12:47:32
  * @FilePath: \Mini_program_backend\app\model\payments.js
  * @Description:
  *
@@ -25,6 +25,46 @@ module.exports = app => {
 
   Payments.saveNew = async paymentData => {
     return await Payments.create(paymentData);
+  };
+
+  Payments.saveModify = async updateData => {
+    const { outTradeNo } = updateData;
+    return await Payments.update(updateData, {
+      where: { outTradeNo },
+    });
+  };
+
+  Payments.getByOutTradeNo = async params => {
+    const { outTradeNo } = params;
+    return await Payments.findOne({
+      where: { out_trade_no: outTradeNo },
+    });
+  };
+
+  Payments.getByOrderIds = async params => {
+    const { orderIds } = params;
+    const whereClause = {
+      [Sequelize.Op.and]: Sequelize.where(
+        Sequelize.fn(
+          "JSON_CONTAINS",
+          Sequelize.col("business_order_id"),
+          Sequelize.literal(`'${JSON.stringify(orderIds)}'`)
+        ),
+        "=",
+        1
+      ),
+    };
+
+    const order = await Payments.findOne({
+      where: whereClause,
+    });
+    return order;
+  };
+
+  Payments.getByUuid = async uuid => {
+    return await Payments.findOne({
+      where: { uuid },
+    });
   };
 
   Payments.getUnpaid = async params => {

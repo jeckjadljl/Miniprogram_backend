@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-09 21:48:53
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-17 18:12:12
+ * @LastEditTime: 2025-06-07 16:36:07
  * @FilePath: \Mini_program_backend\app\schema\payments.js
  * @Description:
  *
@@ -65,7 +65,7 @@ module.exports = app => {
     },
     // "unpaid": 未支付, "paid": 已支付, "refunded": 已退款
     payment_status: {
-      type: ENUM("unpaid", "paid", "refunded"),
+      type: ENUM("unpaid", "paid", "closed", "refunded"),
       defaultValue: "unpaid",
     },
     payment_method: {
@@ -97,6 +97,26 @@ module.exports = app => {
       allowNull: false,
     },
     pay_time: DATE,
+    // refund_status: {
+    //   type: STRING(20),
+    //   comment: "退款状态(none/processing/success/failed)",
+    // },
+    // out_refund_no: {
+    //   type: STRING(64),
+    //   comment: "微信退款单号",
+    // },
+    // refund_id: {
+    //   type: STRING(32),
+    //   comment: "商户退款单号",
+    // },
+    // refund_amount: {
+    //   type: BIGINT,
+    //   comment: "退款金额（单位为分）",
+    // },
+    // refund_success_time: {
+    //   type: DATE,
+    //   comment: "退款成功时间",
+    // },
     lastModifiedTime: {
       type: DATE,
       allowNull: false,

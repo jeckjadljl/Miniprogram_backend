@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-22 15:46:58
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-05 16:16:20
+ * @LastEditTime: 2025-06-04 23:40:43
  * @FilePath: \Mini_program_backend\app\service\notice.js
  * @Description:
  *
@@ -64,13 +64,42 @@ class NoticeService extends Service {
     return await app.model.Notice.query(params);
   }
 
+  async decryptResource(params = {}) {
+    const { app } = this;
+    const { resource } = params;
+    const { apiV3Key } = app.config.wechatPay;
+
+    const key = Buffer.from(apiV3Key, "utf8");
+    const nonce = Buffer.from(resource.nonce, "utf8");
+    const associatedData = Buffer.from(resource.associated_data, "utf8");
+    const ciphertextBuffer = Buffer.from(resource.ciphertext, "base64");
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, nonce);
+    decipher.setAAD(associatedData);
+    const authTag = Buffer.from(
+      ciphertextBuffer.subarray(ciphertextBuffer.length - 16)
+    );
+    decipher.setAuthTag(authTag);
+    // 除去最后16个字节以外的字节作为加密数据
+    const encryptedData = Buffer.from(
+      ciphertextBuffer.subarray(0, ciphertextBuffer.length - 16)
+    );
+    // 调用update方法解密数据
+    let decrypted = decipher.update(encryptedData);
+    // 调用final方法指定编码格式为utf8
+    decrypted += decipher.final("utf8");
+    console.log(decrypted);
+
+    const paySucData = JSON.parse(decrypted);
+    return paySucData;
+  }
+
   /**
    * 小程序端
    */
   async wechatPayCallback(params = {}) {
     const { ctx, app } = this;
     const { event_type, resource } = params;
-    const { apiV3Key } = app.config.wechatPay;
+    // const { apiV3Key } = app.config.wechatPay;
 
     try {
       if (event_type === "TRANSACTION.SUCCESS") {
@@ -83,32 +112,40 @@ class NoticeService extends Service {
         ) {
           throw new Error("缺少必要的加密参数");
         }
+        const paySucData = await this.decryptResource(params);
 
-        const key = Buffer.from(apiV3Key, "utf8");
-        const nonce = Buffer.from(resource.nonce, "utf8");
-        const associatedData = Buffer.from(resource.associated_data, "utf8");
-        const ciphertextBuffer = Buffer.from(resource.ciphertext, "base64");
-        const decipher = crypto.createDecipheriv("aes-256-gcm", key, nonce);
-        decipher.setAAD(associatedData);
-        const authTag = Buffer.from(
-          ciphertextBuffer.subarray(ciphertextBuffer.length - 16)
-        );
-        decipher.setAuthTag(authTag);
-        // 除去最后16个字节以外的字节作为加密数据
-        const encryptedData = Buffer.from(
-          ciphertextBuffer.subarray(0, ciphertextBuffer.length - 16)
-        );
-        // 调用update方法解密数据
-        let decrypted = decipher.update(encryptedData);
-        // 调用final方法指定编码格式为utf8
-        decrypted += decipher.final("utf8");
-        console.log(decrypted);
+        // const key = Buffer.from(apiV3Key, "utf8");
+        // const nonce = Buffer.from(resource.nonce, "utf8");
+        // const associatedData = Buffer.from(resource.associated_data, "utf8");
+        // const ciphertextBuffer = Buffer.from(resource.ciphertext, "base64");
+        // const decipher = crypto.createDecipheriv("aes-256-gcm", key, nonce);
+        // decipher.setAAD(associatedData);
+        // const authTag = Buffer.from(
+        //   ciphertextBuffer.subarray(ciphertextBuffer.length - 16)
+        // );
+        // decipher.setAuthTag(authTag);
+        // // 除去最后16个字节以外的字节作为加密数据
+        // const encryptedData = Buffer.from(
+        //   ciphertextBuffer.subarray(0, ciphertextBuffer.length - 16)
+        // );
+        // // 调用update方法解密数据
+        // let decrypted = decipher.update(encryptedData);
+        // // 调用final方法指定编码格式为utf8
+        // decrypted += decipher.final("utf8");
+        // console.log(decrypted);
 
-        const paySucData = JSON.parse(decrypted);
+        // const paySucData = JSON.parse(decrypted);
         // 处理支付结果
         const result = await this.handlePaymentResult(paySucData);
         return result;
       }
+
+      if (event_type === "REFUND.SUCCESS") {
+        const payRefData = await this.decryptResource(params);
+        const result = await this.handleRefund(payRefData);
+        return result;
+      }
+
       console.log("未知事件类型:", event_type);
       ctx.body = { error: "未知事件类型" };
       ctx.status = 400;
@@ -162,22 +199,40 @@ class NoticeService extends Service {
 
   // 处理退款
   async handleRefund(data) {
-    const { transaction_id, out_trade_no, trade_state, trade_state_desc } =
-      data;
+    const {
+      transaction_id,
+      refund_id,
+      out_trade_no,
+      out_refund_no,
+      refund_status,
+      success_time,
+    } = data;
     const paymentService = this.ctx.service.payments;
 
     // 更新本地订单状态
-    await paymentService.updateOrderStatus(out_trade_no, {
-      transaction_id,
-      payment_status: trade_state,
-      trade_state_desc,
+    // await paymentService.updateOrderStatus(out_trade_no, {
+    //   payment_status: "refunded",
+    //   refund_status,
+    //   refund_success_time: success_time,
+    // });
+
+    // 触发订单状态更新
+    await paymentService.updateRefundStatus(out_trade_no, {
+      payment_status: "refunded",
+      refund_status,
+      out_refund_no,
+      refund_id,
+      refund_success_time: success_time,
     });
 
     this.ctx.logger.info(
-      `退款成功: 订单号 ${out_trade_no}, 交易状态: ${trade_state}, 描述: ${trade_state_desc}`
+      `退款成功: 订单号 ${out_trade_no}, 退款状态: ${refund_status}`
     );
   }
 
+  /**
+   * 小程序端页面消息通知
+   */
   async saveNewForWeapp(params = {}) {
     const { app } = this;
     return await app.model.NoticeForWeapp.saveNew(params);

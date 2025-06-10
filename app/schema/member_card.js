@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-10 15:27:33
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-27 16:52:01
+ * @LastEditTime: 2025-06-10 11:04:17
  * @FilePath: \Mini_program_backend\app\schema\member_card.js
  * @Description:
  *
@@ -26,7 +26,7 @@ module.exports = app => {
       allowNull: false,
     },
     card_type: {
-      type: ENUM("green", "orange", "black"),
+      type: ENUM("green", "pink", "orange", "black"),
       allowNull: false,
     },
     orgUuid: {
@@ -45,6 +45,7 @@ module.exports = app => {
       type: DECIMAL(10, 2),
       allowNull: false,
     },
+    points_amount: DECIMAL(10, 2),
     membership_level: {
       type: ENUM("general", "junior", "premium"),
       allowNull: false,

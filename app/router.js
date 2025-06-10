@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-24 17:41:11
+ * @LastEditTime: 2025-06-08 18:34:25
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -22,6 +22,7 @@ module.exports = app => {
     memberCart,
     goods,
     order,
+    orderReview,
     address,
     goodsCategory,
     merchant,
@@ -115,6 +116,18 @@ module.exports = app => {
   router.post("/order/completeBill", order.completeBill);
   router.post("/order/getUserOrders", order.getUserOrders);
   router.get("/order/getOrderDetails", order.getOrderDetails);
+  router.get("/order/getByUuid", order.getByUuid);
+
+  // 确认收货
+  router.post("/order/confirm", order.confirm);
+
+  // 订单评价
+  router.post("/orderReview/saveNew", orderReview.saveNew);
+  router.post("/orderReview/saveLikes", orderReview.saveLikes);
+
+  // 物流信息
+  router.post("/logistics/traceWaybill", logistics.traceWaybill);
+  router.post("/logistics/queryTrace", logistics.queryTrace);
 
   // 地址设置
   router.get("/address/getAddress", address.getAddress);
@@ -172,12 +185,19 @@ module.exports = app => {
   router.post("/payments/continuePayment", payments.continuePayment);
   // 微信支付回调消息
   router.post("/notice/wechatPayCallback", notice.wechatPayCallback);
+  router.post("/notice/wechatPayCallback/refund", notice.wechatPayCallback);
   // 微信支付订单号查询订单
   router.post("/payments/queryOrder", payments.getOrderStatus);
   // 支付统一调起流程（试验中）
   router.post("/payments/paymentsOrderQuery", payments.paymentsOrderQuery);
   // 获取未支付的记录
   router.post("/payments/getUnpaid", payments.getUnpaid);
+  // 根据订单id获取支付记录
+  router.post("/payments/getByOrderIds", payments.getByOrderIds);
+  // 根据商户支付单号获取支付记录
+  router.post("/payments/getByOutTradeNo", payments.getByOutTradeNo);
+  // 获取支付订单自动取消差值
+  router.post("/payments/:id/autoCancelTime", payments.getAutoCancelTime);
 
   // 获取会员卡数据
   router.get("/membership/getAll", membership.getAll);

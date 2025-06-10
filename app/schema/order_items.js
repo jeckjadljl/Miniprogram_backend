@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:11:51
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-11 20:52:58
+ * @LastEditTime: 2025-06-04 16:18:51
  * @FilePath: \Mini_program_backend\app\schema\order_items.js
  * @Description:
  *
@@ -97,7 +97,14 @@ module.exports = app => {
       allowNull: true, // 折扣金额，如 10.00
     },
     status: {
-      type: ENUM("initial", "paid", "shipped", "completed", "canceled"),
+      type: ENUM(
+        "initial",
+        "paid",
+        "shipped",
+        "completed",
+        "review",
+        "canceled"
+      ),
       allowNull: false,
     },
     goods_id: {

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-01 23:15:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-24 00:00:09
+ * @LastEditTime: 2025-06-09 17:15:10
  * @FilePath: \Mini_program_backend\app\schema\goods_specifications.js
  * @Description:
  *
@@ -45,7 +45,7 @@ module.exports = app => {
       defaultValue: 0,
     }, // 规格对应的库存
     specThumbnail: {
-      type: STRING(255), // 规格对应的缩略图
+      type: STRING(1024), // 规格对应的缩略图
       allowNull: true,
     },
     point_spend: {

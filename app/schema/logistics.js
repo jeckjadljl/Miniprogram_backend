@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 18:07:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-05 10:16:07
+ * @LastEditTime: 2025-06-05 17:33:31
  * @FilePath: \Mini_program_backend\app\schema\logistics.js
  * @Description:
  *
@@ -11,7 +11,8 @@
 
 // schema/orders.js
 module.exports = app => {
-  const { STRING, UUIDV4, DATE, DECIMAL, ENUM, BIGINT, TEXT } = app.Sequelize;
+  const { STRING, UUIDV4, DATE, DECIMAL, ENUM, BIGINT, TEXT, INTEGER, NOW } =
+    app.Sequelize;
 
   return {
     uuid: {
@@ -78,6 +79,16 @@ module.exports = app => {
     },
     logistics_status: STRING(50),
     logistics_info: TEXT,
+    last_checked_time: {
+      type: DATE,
+      comment: "最后检查时间",
+      defaultValue: NOW,
+    },
+    check_count: {
+      type: INTEGER,
+      comment: "检查次数",
+      defaultValue: 0,
+    },
     version: {
       type: BIGINT,
       defaultValue: 0,

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-11 09:59:39
+ * @LastEditTime: 2025-06-10 11:07:34
  * @FilePath: \Mini_program_backend\app\model\member_card.js
  * @Description:
  *
@@ -69,7 +69,10 @@ module.exports = app => {
 
   // 获取所有商品列表
   MemberCard.getAllCards = async ({ attributes }) => {
-    return await MemberCard.findAll({ attributes });
+    return await MemberCard.findAll({
+      attributes,
+      order: [["salePrice", "ASC"]], // 添加排序条件
+    });
   };
 
   return MemberCard;

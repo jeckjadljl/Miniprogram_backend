@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-10 18:50:11
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-27 17:13:07
+ * @LastEditTime: 2025-06-10 16:02:01
  * @FilePath: \Mini_program_backend\app\service\member_card.js
  * @Description:
  *
@@ -72,6 +72,7 @@ class Member_cardService extends Service {
         "card_images",
         "card_name",
         "salePrice",
+        "points_amount",
         "tag",
         "card_type",
         "membership_level",
