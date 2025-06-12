@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-05-06 16:42:03
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-10 17:35:00
+ * @LastEditTime: 2025-06-11 22:59:38
  * @FilePath: \Mini_program_backend\app\service\rewards.js
  * @Description:
  *
@@ -85,17 +85,15 @@ class RewardsService extends Service {
             `用户${order.user_id}获得商品价格10%奖励健康币${baseRewardFinal}`
           );
 
-          // 基础奖励
-          if (imageCount >= 1 && rating >= 4 && cleanReview >= 10) {
-            // 自定义舍入规则：分位≥5进1，否则舍去
-            const amount = itemPrice * 0.03;
-            const reward = Number((Math.ceil(amount * 10) / 10).toFixed(2));
-            await this.addReviewReward(order.user_id, reward, order.uuid);
-          }
-
           // 进阶奖励（示例）
           if (rating === 5 && imageCount >= 2 && cleanReview >= 20) {
             const amount = itemPrice * 0.05;
+            const reward = Number((Math.ceil(amount * 10) / 10).toFixed(2));
+            await this.addReviewReward(order.user_id, reward, order.uuid);
+          } else if (imageCount >= 1 && rating >= 4 && cleanReview >= 10) {
+            // 基础奖励
+            // 自定义舍入规则：分位≥5进1，否则舍去
+            const amount = itemPrice * 0.03;
             const reward = Number((Math.ceil(amount * 10) / 10).toFixed(2));
             await this.addReviewReward(order.user_id, reward, order.uuid);
           }
@@ -108,11 +106,11 @@ class RewardsService extends Service {
 
         allItems.push({
           item,
-          orderData,
           goods,
         });
       }
 
+      console.log("结算商品项:", allItems);
       // 执行分佣逻辑
       await ctx.service.referral.distributeReferralReward(
         order.user_id,

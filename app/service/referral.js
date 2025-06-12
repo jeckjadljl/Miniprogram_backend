@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-10 17:31:23
+ * @LastEditTime: 2025-06-11 22:45:05
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -43,13 +43,20 @@ class ReferralService extends Service {
       attributes: ["uuid", "avatar", "user_name", "phoneNumber"],
     });
 
-    // ▼▼▼ 新增空值检查 ▼▼▼
-    if (!upperReferral) {
-      this.ctx.logger.warn(`用户 ${directReferrerId} 没有上级推荐人`);
-      return;
+    // ▼▼▼ 修复空值检查逻辑 ▼▼▼
+    let upperReferrerId = null;
+    if (upperReferral && upperReferral.referrer_id) {
+      upperReferrerId = upperReferral.referrer_id;
+    } else {
+      this.ctx.logger.warn(`用户 ${directReferrerId} 没有有效上级推荐人`);
     }
-    // 获取上级推荐人信息
-    const upperReferrerId = upperReferral.referrer_id;
+
+    // ▼▼▼ 新增空值检查 ▼▼▼
+    // if (!upperReferral || !upperReferral.referrer_id) {
+    //   this.ctx.logger.warn(`用户 ${directReferrerId} 没有上级推荐人`);
+    // }
+    // // 获取上级推荐人信息
+    // const upperReferrerId = upperReferral.referrer_id;
 
     // 查询用户订单总数
     const orderCount = await Order.count({
@@ -139,6 +146,11 @@ class ReferralService extends Service {
       return;
     }
 
+    this.logger.info(`[商品项] 用户 ${user_id} 完成订单，商品项: ${items}`);
+    this.logger.info(
+      `[分佣开始] 用户 ${user_id} 订单金额: ${totalSpent} 会员等级: ${membershipLevel}`
+    );
+
     // 初始化佣金统计
     let totalDirectReward = 0;
     let totalUpperReward = 0;
@@ -179,36 +191,36 @@ class ReferralService extends Service {
 
     // 存入直接推荐佣金
     if (totalDirectReward > 0) {
-      const finalAmount = Number(totalDirectReward.toFixed(2));
-      await User.addBalance(directReferrerId, finalAmount, { transaction });
+      await User.addBalance(directReferrerId, totalDirectReward, {
+        transaction,
+      });
       await Rewards.createReward(
         {
           userId: directReferrerId,
-          amount: finalAmount,
+          amount: totalDirectReward,
           description: `直接推荐 ${user_id} 的奖励`,
         },
         { transaction }
       );
       this.logger.info(
-        `直接推荐奖励发放成功，推荐人: ${directReferrerId}, 奖励金额: ${finalAmount}`
+        `直接推荐奖励发放成功，推荐人: ${directReferrerId}, 奖励金额: ${totalDirectReward}`
       );
     }
 
     // 查询上级推荐关系
     if (upperReferral && totalUpperReward > 0) {
-      const finalAmount = Number(totalUpperReward.toFixed(2));
       // 存入上级推荐佣金
-      await User.addBalance(upperReferrerId, finalAmount, { transaction });
+      await User.addBalance(upperReferrerId, totalUpperReward, { transaction });
       await Rewards.createReward(
         {
           userId: upperReferrerId,
-          amount: finalAmount,
+          amount: totalUpperReward,
           description: `间接推荐 ${user_id} 的奖励`,
         },
         { transaction }
       );
       this.logger.info(
-        `间接推荐奖励发放成功，推荐人: ${upperReferrerId}, 奖励金额: ${finalAmount}`
+        `间接推荐奖励发放成功，推荐人: ${upperReferrerId}, 奖励金额: ${totalUpperReward}`
       );
     }
   }

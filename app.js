@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-06 11:26:16
+ * @LastEditTime: 2025-06-12 13:45:34
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
@@ -23,7 +23,7 @@ const {
   TENCENT_BUCKET,
   TENCENT_REGION,
   REDIS_HOST,
-  REDIS_PORT,
+  REDIS_HOST_PROD,
 } = process.env;
 
 class AppBootHook {
@@ -52,12 +52,30 @@ class AppBootHook {
     // }
 
     // 初始化 redis 实例
+    const redisConfig = this.app.config.redis.clients.default;
+    console.log("redis连接配置:", redisConfig);
+    console.log(
+      "开发环境:",
+      process.env.NODE_ENV === "production"
+        ? REDIS_HOST_PROD
+        : redisConfig.host || REDIS_HOST
+    );
     const redisClient = new Redis({
-      host: REDIS_HOST,
-      port: REDIS_PORT,
-      password: "",
-      db: 0,
+      ...redisConfig,
+      // 覆盖开发环境默认配置
+      host:
+        process.env.NODE_ENV === "production"
+          ? REDIS_HOST_PROD
+          : redisConfig.host || REDIS_HOST,
+      port: parseInt(redisConfig.port) || 6379,
+      retryStrategy: times => Math.min(times * 100, 3000),
     });
+    // const redisClient = new Redis({
+    //   host: REDIS_HOST || REDIS_HOST_PROD,
+    //   port: REDIS_PORT,
+    //   password: "",
+    //   db: 0,
+    // });
 
     // 解决 ioredis v5+ 兼容性问题
     redisClient.connect = redisClient.connect || (() => Promise.resolve());
@@ -68,13 +86,21 @@ class AppBootHook {
       {
         // 确保有合理的默认配置
         driftFactor: 0.01,
-        retryCount: 3,
-        retryDelay: 200,
-        retryJitter: 200,
+        retryCount: 10,
+        retryDelay: 500,
+        retryJitter: 500,
       }
       // ...(this.app.config.redlock.options || {})
     );
     this.app.redlock = redlock;
+
+    // 在 Redis 客户端初始化后添加
+    redisClient.on("connect", () =>
+      console.log("✅ Redis 已连接至:", redisClient.options.host)
+    );
+    redisClient.on("error", err =>
+      console.error("❌ Redis 连接失败:", err.message)
+    );
 
     // 正确的错误处理（应监听 redlock 实例）
     redlock.on("error", err => {

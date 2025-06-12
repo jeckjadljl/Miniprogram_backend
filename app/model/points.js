@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-24 16:34:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-10 01:15:15
+ * @LastEditTime: 2025-06-11 23:12:11
  * @FilePath: \Mini_program_backend\app\model\points.js
  * @Description:
  *
@@ -28,7 +28,7 @@ module.exports = app => {
   };
 
   Points.add = async data => {
-    const { user_id, points, source, current_balance } = data;
+    const { user_id, points, source, current_balance, source_id } = data;
 
     const point = await Points.create({
       user_id,
@@ -36,6 +36,7 @@ module.exports = app => {
       points,
       source,
       current_balance,
+      source_id,
     });
 
     return point.uuid;

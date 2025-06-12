@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-06-02 22:35:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-03 10:18:59
+ * @LastEditTime: 2025-06-10 22:33:44
  * @FilePath: \Mini_program_backend\app\service\bullmq.js
  * @Description:
  *
@@ -25,11 +25,20 @@ class BullMQService extends Service {
     if (app.bullmq) return;
 
     // 创建 Redis 连接配置
+    // const connection = {
+    //   host: "127.0.0.1",
+    //   port: 6379,
+    //   password: "",
+    //   db: 0,
+    // };
+
+    // 修改后（使用配置中心数据）
     const connection = {
-      host: "127.0.0.1",
-      port: 6379,
-      password: "",
-      db: 0,
+      host: app.config.redis.clients.default.host,
+      port: app.config.redis.clients.default.port,
+      password: app.config.redis.clients.default.password || "",
+      db: app.config.redis.clients.default.db || 0,
+      retryStrategy: times => Math.min(times * 100, 3000),
     };
 
     // 创建队列

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-05-04 20:43:12
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-08 11:35:31
+ * @LastEditTime: 2025-06-10 21:41:13
  * @FilePath: \Mini_program_backend\app\schedule\update_logistics.js
  * @Description:
  *
@@ -33,7 +33,7 @@ module.exports = {
                 "TIMESTAMPDIFF(MINUTE, last_checked_time, NOW())"
               ),
               ">=",
-              5 // 至少30分钟未检查的记录
+              30 // 至少30分钟未检查的记录
             ),
           ],
         },

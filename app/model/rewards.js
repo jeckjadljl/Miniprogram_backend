@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-22 16:29:35
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-26 17:35:51
+ * @LastEditTime: 2025-06-11 23:12:49
  * @FilePath: \Mini_program_backend\app\model\rewards.js
  * @Description:
  *
@@ -29,7 +29,7 @@ module.exports = app => {
 
   // 创建奖励记录
   Rewards.createReward = async ({ userId, amount, description }) => {
-    await this.ctx.model.Reward.create({
+    await Rewards.create({
       user_id: userId,
       amount,
       description,

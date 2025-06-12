@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-26 20:23:38
+ * @LastEditTime: 2025-06-11 11:25:54
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -213,6 +213,10 @@ module.exports = app => {
             "isDefault",
           ],
           as: "spec",
+          order: [
+            ["sort_order", "ASC"], // 非0的sort_order升序
+            ["specPrice", "ASC"], // 最后按价格排序
+          ],
         },
         {
           model: model.GoodsSpecColor,
@@ -229,11 +233,12 @@ module.exports = app => {
             "sort_order", // 新增排序字段到返回结果
           ],
           as: "specColor",
+          // 添加排序规则
+          order: [
+            ["sort_order", "ASC"], // 非0的sort_order升序
+            ["specPrice", "ASC"], // 最后按价格排序
+          ],
         },
-      ],
-      order: [
-        [{ model: model.GoodsSpecifications, as: "spec" }, "sort_order", "ASC"],
-        [{ model: model.GoodsSpecColor, as: "specColor" }, "sort_order", "ASC"],
       ],
       logging: console.log, // 启用日志记录
     });
