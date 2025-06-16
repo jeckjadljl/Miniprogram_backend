@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 16:56:10
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-06 21:54:19
+ * @LastEditTime: 2025-06-15 11:57:14
  * @FilePath: \Mini_program_backend\app\controller\login.js
  * @Description:
  *
@@ -61,6 +61,18 @@ class LoginController extends Controller {
     const { ctx } = this;
     const { code } = ctx.request.body;
     const result = await ctx.service.login.Login(code);
+    this.success(result);
+  }
+
+  async refreshLoginStatue() {
+    const { ctx } = this;
+    const { code, userInfo } = ctx.request.body;
+    if (!code || !userInfo) {
+      ctx.throw(400, "缺少必要参数");
+    }
+
+    // 调用登录服务，传递解析后的字段
+    const result = await ctx.service.login.refreshLoginStatue(ctx.request.body);
     this.success(result);
   }
 }

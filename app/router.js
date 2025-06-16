@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-08 18:34:25
+ * @LastEditTime: 2025-06-15 12:40:07
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -68,6 +68,7 @@ module.exports = app => {
   router.post("/login", login.login);
   router.post("/login/test", login.testlogin);
   router.post("/login/getOpenId", login.getOpenId);
+  router.post("/login/refreshLoginStatus", login.refreshLoginStatue);
 
   // 上传用户头像
   router.post("/user/uploadAvatar", user.uploadAvatar);

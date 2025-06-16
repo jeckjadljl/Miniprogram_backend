@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-08 18:42:59
+ * @LastEditTime: 2025-06-16 10:23:05
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -19,6 +19,7 @@ module.exports = options => {
       "/login",
       "/login/test",
       "/login/getOpenId",
+      "/login/refreshLoginStatus",
       "/common/login",
       "/auth/refreshToken",
       "/auth/refreshAdminToken",
@@ -101,6 +102,7 @@ module.exports = options => {
       "/order/confirm",
       "/payments/:id/autoCancelTime",
       "/payments/getByOutTradeNo",
+      "/points/saveNew",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

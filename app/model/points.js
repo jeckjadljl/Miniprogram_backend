@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-24 16:34:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-11 23:12:11
+ * @LastEditTime: 2025-06-16 10:29:21
  * @FilePath: \Mini_program_backend\app\model\points.js
  * @Description:
  *
@@ -36,7 +36,7 @@ module.exports = app => {
       points,
       source,
       current_balance,
-      source_id,
+      ...(source_id && { source_id }), // 条件添加字段
     });
 
     return point.uuid;

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 18:15:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-04 11:08:18
+ * @LastEditTime: 2025-06-15 11:56:52
  * @FilePath: \Mini_program_backend\app\service\login.js
  * @Description:
  *
@@ -326,6 +326,37 @@ class LoginService extends Service {
     );
     console.log(response.data);
     return response.data;
+  }
+
+  async refreshLoginStatue(params = {}) {
+    const { ctx } = this;
+    const { code, userInfo } = params;
+    const { uuid, nickName, avatarUrl } = userInfo;
+    const response = await axios.get(
+      "https://api.weixin.qq.com/sns/jscode2session",
+      {
+        params: {
+          appid,
+          secret,
+          js_code: code,
+          grant_type: "authorization_code",
+        },
+      }
+    );
+    const { openid, session_key, errcode, errmsg } = response.data;
+    if (errcode) {
+      console.error(`微信接口错误: errcode=${errcode}, errmsg=${errmsg}`);
+      throw new Error(`微信接口错误: ${errmsg || "未知错误"}`);
+    }
+
+    const token = await ctx.service.jwt.generateToken(uuid);
+    await ctx.service.redis.set(uuid, session_key, 3 * 24 * 60 * 60, "token"); // 设置3天有效期
+    return {
+      token: token.token,
+      uuid,
+      session_key,
+      type: "refresh",
+    };
   }
 }
 
