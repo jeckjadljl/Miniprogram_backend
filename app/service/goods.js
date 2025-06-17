@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 12:02:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-27 20:23:39
+ * @LastEditTime: 2025-06-17 15:56:22
  * @FilePath: \Mini_program_backend\app\service\goods.js
  * @Description:
  *
@@ -339,12 +339,48 @@ class GoodsService extends Service {
     });
 
     for (const resultItem of resultList) {
-      const { goods_id, name: label, goods: lines } = resultItem || {};
+      const {
+        goods_id,
+        name: label,
+        goods: lines,
+        videos = [],
+      } = resultItem || {};
+
+      // 合并商品和视频数据（当只有视频时也能返回）
+      // const mergedLines = [
+      //   ...lines,
+      //   ...videos.map(video => ({
+      //     videos: {
+      //       // 保持数据结构一致
+      //       ...video.dataValues,
+      //       categoryName: label,
+      //     },
+      //   })),
+      // ];
+      // // 合并视频数据到商品列表
+      // if (videos && videos.length > 0) {
+      //   lines.push(
+      //     ...videos.map(video => ({
+      //       ...video.dataValues,
+      //       isVideo: true, // 添加类型标识
+      //     }))
+      //   );
+      // }
 
       lines.forEach(item => {
         item.dataValues.categoryName = label;
       });
-      goodsList.push({ goods_id, label, lines });
+
+      videos.forEach(item => {
+        item.dataValues.categoryName = label;
+      });
+
+      goodsList.push({
+        goods_id: goods_id || uuid, // 当没有商品时使用分类ID
+        label,
+        lines,
+        videos,
+      });
     }
 
     return goodsList;

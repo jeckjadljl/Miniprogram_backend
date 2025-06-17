@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-08 17:12:36
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-26 17:30:08
+ * @LastEditTime: 2025-06-16 20:27:14
  * @FilePath: \Mini_program_backend\app\schema\goods_category.js
  * @Description:
  *
@@ -11,7 +11,7 @@
 "use strict";
 
 module.exports = app => {
-  const { STRING, DATE, UUIDV4, BIGINT } = app.Sequelize;
+  const { STRING, DATE, UUIDV4, BIGINT, ENUM } = app.Sequelize;
 
   return {
     uuid: {
@@ -55,6 +55,10 @@ module.exports = app => {
     },
     orgUuid: {
       type: STRING(38),
+      allowNull: false,
+    },
+    status: {
+      type: ENUM("up", "down"),
       allowNull: false,
     },
     sort_order: {

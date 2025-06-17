@@ -10,12 +10,16 @@ module.exports = app => {
   });
 
   GoodsCategory.associate = function () {
-    const { Goods, Merchant, Elements } = model;
+    const { Goods, Merchant, Elements, Video } = model;
     GoodsCategory.hasMany(Goods, { foreignKey: "category_id" });
     GoodsCategory.belongsTo(Merchant, { foreignKey: "orgUuid" });
     GoodsCategory.belongsTo(Elements, {
       foreignKey: "elements_id",
       as: "categories",
+    });
+    GoodsCategory.hasMany(Video, {
+      foreignKey: "category_id",
+      as: "videos",
     });
   };
 
@@ -123,7 +127,7 @@ module.exports = app => {
   };
 
   GoodsCategory.getAll = async ({ attributes }) => {
-    return await GoodsCategory.findAll({ attributes });
+    return await GoodsCategory.findAll({ attributes, where: { status: "up" } });
   };
 
   return GoodsCategory;

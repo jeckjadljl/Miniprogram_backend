@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-22 23:32:34
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-25 18:15:23
+ * @LastEditTime: 2025-06-17 11:16:48
  * @FilePath: \Mini_program_backend\app\model\video.js
  * @Description:
  *
@@ -18,8 +18,9 @@ module.exports = app => {
   });
 
   Video.associate = function () {
-    const { Elements } = model;
+    const { Elements, GoodsCategory } = model;
     Video.belongsTo(Elements, { foreignKey: "elements_id" });
+    Video.belongsTo(GoodsCategory, { foreignKey: "category_id" });
   };
 
   Video.saveNew = async params => {

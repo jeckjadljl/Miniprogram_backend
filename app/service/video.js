@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-22 23:27:45
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-25 18:15:05
+ * @LastEditTime: 2025-06-16 18:35:53
  * @FilePath: \Mini_program_backend\app\service\video.js
  * @Description:
  *
@@ -13,6 +13,7 @@
 const Service = require("egg").Service;
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 class VideoService extends Service {
   async saveNew(params = {}) {

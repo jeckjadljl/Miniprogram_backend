@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-16 12:37:36
+ * @LastEditTime: 2025-06-17 12:08:03
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -125,6 +125,17 @@ module.exports = app => {
           model: Goods,
           attributes: goodsAttributes,
           where: { status: "up" },
+          required: false, // 允许分类下没有商品
+          separate: false, // 保持关联查询
+        },
+        {
+          model: model.Video,
+          as: "videos",
+          where: {
+            category_id: uuid,
+            status: "active", // 确保视频状态正确
+          },
+          required: false, // 允许分类下没有视频
         },
       ],
     });

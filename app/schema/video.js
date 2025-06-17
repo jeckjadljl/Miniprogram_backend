@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-22 22:58:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-23 10:45:05
+ * @LastEditTime: 2025-06-17 11:11:15
  * @FilePath: \Mini_program_backend\app\schema\video.js
  * @Description:
  *
@@ -59,6 +59,7 @@ module.exports = app => {
       type: STRING(38),
       allowNull: false,
     },
+    category_id: STRING(38),
     orgUuid: {
       type: STRING(38),
       allowNull: false,

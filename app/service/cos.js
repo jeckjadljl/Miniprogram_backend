@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-02 19:15:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-24 11:08:51
+ * @LastEditTime: 2025-06-17 10:47:03
  * @FilePath: \Mini_program_backend\app\service\cos.js
  * @Description:
  *
@@ -35,6 +35,11 @@ class CosService extends Service {
    * @returns {Promise<String>} 返回上传完成后的文件 URL
    */
   async multipartUpload(fileBuffer, key, partSize = 5 * 1024 * 1024) {
+    // 添加验证，确保 fileBuffer 是有效的 Buffer
+    if (!Buffer.isBuffer(fileBuffer)) {
+      throw new Error("Invalid fileBuffer: expects a Buffer instance");
+    }
+
     const totalSize = fileBuffer.length;
     const parts = Math.ceil(totalSize / partSize); // 计算分块数量
     const uploadId = await this.initMultipartUpload(key); // 初始化分块上传
@@ -49,15 +54,17 @@ class CosService extends Service {
     }
 
     const etags = await Promise.all(promises); // 等待所有分块上传完成
-    const partsInfo = etags.map((etag, index) => ({
-      ETag: etag,
-      PartNumber: index + 1,
-    }));
+    const partsInfo = etags
+      .map((etag, index) => ({
+        ETag: etag,
+        PartNumber: index + 1,
+      }))
+      .sort((a, b) => a.PartNumber - b.PartNumber);
 
     // 打印调试信息
     console.log("PartsInfo:", partsInfo);
 
-    if (partsInfo.length === 0) {
+    if (!Array.isArray(partsInfo) || partsInfo.length === 0) {
       throw new Error("No parts uploaded. Aborting multipart upload.");
     }
 
@@ -126,6 +133,12 @@ class CosService extends Service {
    * @returns {Promise<String>} 返回上传完成后的文件 URL
    */
   async completeMultipartUpload(key, uploadId, partsInfo) {
+    // 修改后（正确示例）
+    const formattedParts = partsInfo.map(part => ({
+      PartNumber: part.PartNumber, // 注意大小写！
+      ETag: part.ETag, // 添加双引号
+    }));
+
     return new Promise((resolve, reject) => {
       this.cos.multipartComplete(
         {
@@ -133,15 +146,21 @@ class CosService extends Service {
           Region: this.Region,
           Key: key,
           UploadId: uploadId,
-          MultipartUpload: {
-            Parts: partsInfo,
-          },
+          Parts: formattedParts, // 使用修正后的数组
         },
         (err, data) => {
           if (err) {
+            console.error("Complete multipart upload error details:", {
+              Bucket: this.Bucket,
+              Region: this.Region,
+              Key: key,
+              UploadId: uploadId,
+              Parts: formattedParts,
+            });
             reject(new Error(`完成分块上传失败: ${err.message}`));
           } else {
-            resolve(data.Location);
+            const video = `https://${data.Location}`;
+            resolve(video);
           }
         }
       );
