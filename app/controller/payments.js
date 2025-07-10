@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-26 16:27:12
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-08 18:34:04
+ * @LastEditTime: 2025-07-03 16:22:54
  * @FilePath: \Mini_program_backend\app\controller\payments.js
  * @Description:
  *
@@ -17,7 +17,7 @@ class PaymentsController extends Controller {
     const { ctx } = this;
     // 调用服务层的下单方法
     const wechatPayService = ctx.service.payments;
-    const result = await wechatPayService.createPayment(ctx.request.body);
+    const result = await wechatPayService.groupBuyPayment(ctx.request.body);
 
     this.success(result);
   }
@@ -81,6 +81,21 @@ class PaymentsController extends Controller {
 
     const result = await ctx.service.payments.getAutoCancelTime(paymentId);
     this.success(result);
+  }
+
+  // 使用transaction_id获取订单信息
+  async getDeliveryInfo() {
+    const { ctx } = this;
+    const { transaction_id } = ctx.request.body;
+
+    try {
+      const result = await ctx.service.payments.getOrdersForDelivery(
+        transaction_id
+      );
+      this.success(result);
+    } catch (error) {
+      this.fail(error.message);
+    }
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-14 23:49:24
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-26 17:22:11
+ * @LastEditTime: 2025-06-29 17:39:49
  * @FilePath: \Mini_program_backend\app\service\points.js
  * @Description:
  *
@@ -60,7 +60,28 @@ class PointsService extends Service {
       where: { user_id },
     });
 
-    return totalConsumption >= 50; // 直接返回金额是否达标
+    return totalConsumption.toFixed(2) >= 50; // 直接返回金额是否达标
+  }
+
+  // 新增健康币检查方法
+  async checkUserPoints(userId, requiredPoints) {
+    const { app } = this;
+    const { User, Points } = app.model;
+    const user = await User.findOne({ where: { uuid: userId } });
+
+    if (!user) {
+      const error = new Error("用户不存在");
+      error.name = "UserNotFound";
+      throw error;
+    }
+
+    const userPoints = Number(user.consumption_points);
+    const required = Number(requiredPoints);
+
+    console.log(typeof user.consumption_points, typeof requiredPoints);
+    console.log(Number(user.consumption_points), Number(requiredPoints));
+
+    return Number(userPoints.toFixed(2)) >= Number(required.toFixed(2));
   }
 }
 

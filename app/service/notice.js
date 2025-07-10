@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-22 15:46:58
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-04 23:40:43
+ * @LastEditTime: 2025-06-30 22:22:37
  * @FilePath: \Mini_program_backend\app\service\notice.js
  * @Description:
  *
@@ -11,6 +11,7 @@
 "use strict";
 
 const Service = require("egg").Service;
+const { default: axios } = require("axios");
 const crypto = require("crypto");
 // const { promisify } = require("util");
 // const { XMLParser } = require("fast-xml-parser");
@@ -246,6 +247,38 @@ class NoticeService extends Service {
   async getNoticeByElementsId(params = {}) {
     const { app } = this;
     return await app.model.NoticeForWeapp.getNoticeByElementsId(params);
+  }
+
+  async sendSubscribeMessage(params = {}) {
+    const { app, ctx } = this;
+    const { openid, page, data } = params;
+    const { groupBuy } = app.config.subscribeTemplate;
+
+    const getAccessToken = await ctx.service.jwt.getAccessToken();
+    const url = `/cgi-bin/message/subscribe/send?access_token=${getAccessToken}`;
+
+    const body = {
+      touser: openid,
+      template_id: groupBuy,
+      page: page || "subpackageCore/pages/index/index",
+      data: {
+        thing1: data?.thing1 || "拼团成功，请完成该订单", // 支持动态内容
+        character_string2: data?.character_string2 || "",
+        amount10: data?.amount10 || "",
+        number6: data?.number6 || "",
+        thing5: data?.thing5 || "如有任何疑问请联系客服微信",
+      },
+    };
+
+    try {
+      const result = await axios.get(`https://api.weixin.qq.com${url}`, body);
+
+      if (result.data.errcode === 0) {
+        return result.data;
+      }
+    } catch (err) {
+      return err;
+    }
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-22 18:07:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-09 12:04:54
+ * @LastEditTime: 2025-07-03 18:21:53
  * @FilePath: \Mini_program_backend\app\model\order.js
  * @Description:
  *
@@ -21,7 +21,10 @@ module.exports = app => {
     const { User, OrderItem, Address, Merchant, Payments, Logistics } = model;
     Order.belongsTo(User, { foreignKey: "user_id" });
     Order.hasMany(OrderItem, { foreignKey: "order_id" });
-    Order.belongsTo(Address, { foreignKey: "address_id", as: "address" });
+    Order.belongsTo(Address, {
+      foreignKey: "address_id",
+      as: "address",
+    });
     Order.belongsTo(Merchant, { foreignKey: "orgUuid" });
     Order.hasOne(Payments, {
       foreignKey: "business_order_id",
@@ -181,9 +184,11 @@ module.exports = app => {
   Order.getOrderFromPayments = async ({
     orderAttributes,
     orderLineAttributes,
+    orderAddressAttributes,
     uuid,
   }) => {
-    return await Order.findOne({
+    console.log("地址信息：", orderAddressAttributes);
+    const order = await Order.findOne({
       attributes: orderAttributes,
       include: [
         {
@@ -191,9 +196,20 @@ module.exports = app => {
           as: "orderitems",
           attributes: orderLineAttributes,
         },
+        {
+          model: model.Address,
+          as: "address",
+          attributes: orderAddressAttributes,
+        },
       ],
       where: { uuid },
     });
+
+    if (order && order.address_id && !order.address) {
+      console.error(`地址不存在: ${order.address_id}`);
+    }
+
+    return order;
   };
 
   /**

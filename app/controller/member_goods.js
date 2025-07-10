@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:25:06
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-24 21:11:58
+ * @LastEditTime: 2025-06-24 16:58:29
  * @FilePath: \Mini_program_backend\app\controller\member_goods.js
  * @Description:
  *
@@ -50,6 +50,12 @@ class Member_goodsController extends Controller {
     const result = await ctx.service.memberGoods.getByPromotionName(
       ctx.request.body
     );
+    this.success(result);
+  }
+
+  async getByGoodsId() {
+    const { ctx } = this;
+    const result = await ctx.service.memberGoods.getByGoodsId(ctx.request.body);
     this.success(result);
   }
 

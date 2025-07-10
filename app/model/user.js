@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-18 16:04:48
+ * @LastEditTime: 2025-07-09 21:14:37
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -37,6 +37,9 @@ module.exports = app => {
       VoucherRules,
       Payments,
       GroupBuyer,
+      UserProfile,
+      Posts,
+      Interactions,
     } = model;
     User.belongsToMany(Role, {
       through: UserRoles,
@@ -74,12 +77,19 @@ module.exports = app => {
       otherKey: "member_card_id",
     });
     User.hasMany(Payments, { foreignKey: "user_id" });
-    User.hasMany(GroupBuyer, { foreignKey: "user_id" });
+    User.hasMany(GroupBuyer, { foreignKey: "buyer_id" });
+    User.hasOne(UserProfile, { foreignKey: "user_id", as: "profile" });
+    User.hasMany(Posts, { foreignKey: "user_id", as: "posts" });
+    User.hasMany(Interactions, {
+      foreignKey: "reply_user_id",
+      as: "interactions",
+    });
   };
 
   User.saveModify = async user => {
     const { uuid } = user;
     await User.update(user, { where: { uuid } });
+    await model.UserProfile.saveModify({ user_id: uuid, ...user });
     return uuid;
   };
 

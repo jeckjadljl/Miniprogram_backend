@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:21:27
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-06 00:00:37
+ * @LastEditTime: 2025-06-24 16:58:04
  * @FilePath: \Mini_program_backend\app\service\member_goods.js
  * @Description:
  *
@@ -110,6 +110,11 @@ class Member_goodsService extends Service {
   async getByPromotionName(params = {}) {
     const { app } = this;
     return await app.model.MemberGoods.getByPromotionName(params);
+  }
+
+  async getByGoodsId(params = {}) {
+    const { app } = this;
+    return await app.model.MemberGoods.getByGoodsId(params);
   }
 
   // 验证兑换限制

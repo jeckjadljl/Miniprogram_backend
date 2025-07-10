@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-29 20:34:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-08 12:18:40
+ * @LastEditTime: 2025-07-02 00:04:44
  * @FilePath: \Mini_program_backend\app\service\logistics.js
  * @Description:
  *
@@ -135,53 +135,63 @@ class LogisticsService extends Service {
           );
         }
 
-        // 更新订单项状态
-        const [orderitemUpdatedCount] = await ctx.model.OrderItem.update(
-          {
-            status: this.mapLogisticsStatus(response.data.waybill_info.status),
-          },
-          {
-            where: {
-              uuid: orderitem_id,
-              status: "paid", // 只更新已支付状态的订单
-            },
-            transaction,
-          }
+        const mappedStatus = this.mapLogisticsStatus(
+          response.data.waybill_info.status
         );
-        if (orderitemUpdatedCount === 0) {
-          ctx.logger.warn(
-            `OrderItem record with uuid ${orderitem_id} not found`
+        if (mappedStatus) {
+          // 更新订单项状态
+          const [orderitemUpdatedCount] = await ctx.model.OrderItem.update(
+            {
+              status: mappedStatus,
+            },
+            {
+              where: {
+                uuid: orderitem_id,
+                status: "paid", // 只更新已支付状态的订单
+              },
+              transaction,
+            }
           );
-        }
+          if (orderitemUpdatedCount === 0) {
+            ctx.logger.warn(
+              `OrderItem record with uuid ${orderitem_id} not found`
+            );
+          }
 
-        // 添加调试日志
-        ctx.logger.info("开始更新物流状态", {
-          orderitem_id,
-          wx_status: response.data.waybill_info.status,
-          mapped_status: this.mapLogisticsStatus(
-            response.data.waybill_info.status
-          ),
-        });
-
-        // 更新主订单状态（根据所有订单项的状态）
-        await ctx.model.Order.update(
-          {
-            order_status: this.mapLogisticsStatus(
+          // 添加调试日志
+          ctx.logger.info("开始更新物流状态", {
+            orderitem_id,
+            wx_status: response.data.waybill_info.status,
+            mapped_status: this.mapLogisticsStatus(
               response.data.waybill_info.status
             ),
-          },
-          {
-            where: {
-              uuid: orderitem.order_id,
-              status: "paid", // 只更新已支付状态的订单
-            },
-            transaction,
-          }
-        );
+          });
 
-        return { message: "物流状态更新完成" };
+          // 更新主订单状态（根据所有订单项的状态）
+          await ctx.model.Order.update(
+            {
+              order_status: mappedStatus,
+            },
+            {
+              where: {
+                uuid: orderitem.order_id,
+                order_status: "paid", // 只更新已支付状态的订单
+              },
+              transaction,
+            }
+          );
+        } else {
+          ctx.logger.warn("未映射的物流状态", {
+            wx_status: response.data.waybill_info.status,
+            orderitem_id,
+          });
+        }
+        this.logger.info("物流查询成功:", response.data);
       }
-      this.logger.error("物流查询失败:", response.data.errmsg);
+      if (response.data.errcode) {
+        this.logger.error("物流查询失败:", response.data.errmsg);
+        throw new Error(response.data.errmsg); // 抛出错误触发回滚
+      }
     });
 
     // const accessToken = await this.jwt.getAccessToken();
@@ -251,10 +261,13 @@ class LogisticsService extends Service {
   // 新增状态映射方法
   mapLogisticsStatus(wxStatus) {
     const STATUS_MAP = {
-      2: "shipped", // 运输中
+      0: "paid", // 待揽件
+      1: "paid", // 揽件中
+      2: "paid", // 运输中
       3: "shipped", // 派件中
       4: "shipped", // 已签收
       5: "shipped", // 异常
+      6: "shipped", // 代签收
     };
     return STATUS_MAP[wxStatus];
   }

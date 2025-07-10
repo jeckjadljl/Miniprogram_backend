@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:22:17
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-07 11:57:07
+ * @LastEditTime: 2025-07-09 20:13:02
  * @FilePath: \Mini_program_backend\app\service\user.js
  * @Description:
  *
@@ -40,7 +40,7 @@ class UserService extends Service {
     const user = await this.ctx.model.User.update(userData, {
       where: { uuid },
     });
-    return user.uuid;
+    return user;
   }
 
   async deleteUser(openid) {

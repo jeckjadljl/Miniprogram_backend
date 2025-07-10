@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-16 10:23:05
+ * @LastEditTime: 2025-07-09 21:38:22
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -92,17 +92,28 @@ module.exports = options => {
       "/goodsPricing/saveNew",
       "/goodsPricing/getGoodsPricingById",
       "/group/saveNew",
+      "/group/getGroupById",
+      "/group/getGroupByOrderId",
+      "/group/getGroupStatus",
+      "/group/joinGroup",
       "/order/getUserOrders",
       "/promotion/saveModify",
       "/memberGoods/validateExchange",
+      "/memberGoods/getByGoodsId",
       "/admin/queues",
       "/orderReview/saveNew",
       "/orderReview/saveLikes",
       "/order/getByUuid",
       "/order/confirm",
+      "/order/getOrderBill",
       "/payments/:id/autoCancelTime",
       "/payments/getByOutTradeNo",
       "/points/saveNew",
+      "/payments/getDeliveryInfo",
+      "/address/getAddress",
+      "/posts/waterfull",
+      "/posts/saveNew",
+      "/posts/saveModify",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

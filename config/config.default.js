@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-06 11:10:26
+ * @LastEditTime: 2025-06-30 11:17:33
  * @FilePath: \Mini_program_backend\config\config.default.js
  * @Description:
  *
@@ -43,6 +43,7 @@ module.exports = appInfo => {
     WX_NOTIFY_URL,
     KDNIAO_API_KEY,
     KDNIAO_REQUEST_URL,
+    WX_SUBSCRIBE_TEMPLATE_ID_GROUPBRY_BILLING,
   } = process.env;
 
   config.cluster = {
@@ -227,6 +228,10 @@ module.exports = appInfo => {
     appId: WX_APPID, // 小程序AppID
     apiV3Key: WX_PAYMENTS_APIV3_KEY, // API v3密钥
     notify_url: WX_NOTIFY_URL,
+  };
+
+  config.subscribeTemplate = {
+    groupBuy: WX_SUBSCRIBE_TEMPLATE_ID_GROUPBRY_BILLING,
   };
 
   return {

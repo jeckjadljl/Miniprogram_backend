@@ -12,31 +12,37 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql # 将初始化脚本挂载到容器中
+      - mysql_data:/var/lib/mysql  # 添加持久化数据卷
     networks:
       - miniprogram-network
-    # command: >
-    #   /bin/sh -c "
-    #     echo 'NODEJS_PORT=${NODEJS_PORT}' > .env &&
-    #     echo 'JWT_SECRET=${JWT_SECRET}' >> .env &&
-    #     echo 'MYSQL_USERNAME=${MYSQL_USERNAME}' >> .env &&
-    #     echo 'MYSQL_PASSWORD=${MYSQL_PASSWORD}' >> .env &&
-    #     echo 'MYSQL_HOST=${MYSQL_HOST}' >> .env &&
-    #     echo 'MYSQL_PORT=${MYSQL_PORT}' >> .env &&
-    #     echo 'MYSQL_DATABASE=${MYSQL_DATABASE}' >> .env &&
-    #     echo 'REDIS_HOST=${REDIS_HOST}' >> .env &&
-    #     echo 'REDIS_PORT=${REDIS_PORT}' >> .env &&
-    #     echo 'WX_APPID=${WX_APPID}' >> .env &&
-    #     echo 'WX_APPSECRET=${WX_APPSECRET}' >> .env &&
-    #     echo 'ALTER USER \\'root\\'@\\'localhost\\' IDENTIFIED WITH mysql_native_password BY \\'${MYSQL_PASSWORD}\\';' >> .init.sql # 先创建.env和init.sql文件，再启动mysql服务
 
-    # Redis 服务
-  redis:
+    # Redis 主节点服务
+  redis-master:
     image: redis
-    container_name: redis
+    container_name: redis-master
     ports:
-      - "${REDIS_DOCKER_PORT:-6379}:6379"
+      - "${REDIS_MASTER_DOCKER_PORT:-6379}:6379"
+    volumes:
+      - redis_master_data:/data  # 添加持久化数据卷
+      - ./redis-config/redis-master.conf:/usr/local/etc/redis/redis.conf  # 新增配置文件挂载
     networks:
       - miniprogram-network
+    command: redis-server /usr/local/etc/redis/redis.conf  # 指定配置文件启动
+
+  # Redis 从节点服务
+  redis-slave:
+    image: redis
+    container_name: redis-slave
+    ports:
+      - "${REDIS_SLAVE_DOCKER_PORT:-6380}:6379"
+    volumes:
+      - redis_slave_data:/data  # 添加持久化数据卷
+      - ./redis-config/redis-slave.conf:/usr/local/etc/redis/redis.conf  # 新增配置文件挂载
+    networks:
+      - miniprogram-network
+    command: redis-server /usr/local/etc/redis/redis.conf  # 指定配置文件启动
+    depends_on:
+      - redis-master
 
   # Node.js 应用服务
   miniprogram_backend:
@@ -47,7 +53,10 @@ services:
       - "${NODEJS_PORT:-7001}:7001"
     depends_on:
       - mysql
-      - redis
+      - redis-master
+    volumes:
+      # 添加证书挂载
+      - /www/wwwroot/cert:/usr/src/app/cert  # 宿主机:容器内
     networks:
       - miniprogram-network
     environment:
@@ -64,13 +73,28 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       WX_APPID: ${WX_APPID}
       WX_APPSECRET: ${WX_APPSECRET}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     command: >
       sh -c "
-        dockerize -wait tcp://redis:6379 -timeout 60s &&
-        dockerize -wait tcp://mysql:3306 -timeout 60s &&
-        npx sequelize-cli db:migrate --name 20241107073749-init-all-tables.js --env prod &&
+        dockerize -wait tcp://redis-master:6379 -timeout 60s
+        dockerize -wait tcp://mysql:3306 -timeout 60s
+        # 检查特定迁移是否已执行
+        if ! npx sequelize-cli db:migrate:status --env prod | grep '20241107073749-init-all-tables.js' | grep -q 'up'; then
+          echo 'Running migration...'
+          npx sequelize-cli db:migrate --name 20241107073749-init-all-tables.js --env prod
+        else
+          echo 'Migration already applied. Skipping migration.'
+        fi
         npm run dev"
 
 networks:
   miniprogram-network:
     driver: bridge
+    
+volumes:  # 声明持久化卷
+  mysql_data:
+    driver: local
+  redis_master_data:
+    driver: local
+  redis_slave_data:
+    driver: local

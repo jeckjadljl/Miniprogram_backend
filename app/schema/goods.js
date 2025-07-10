@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-12 21:44:14
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-14 09:51:13
+ * @LastEditTime: 2025-06-17 22:53:45
  * @FilePath: \Mini_program_backend\app\schema\goods.js
  * @Description:
  *
@@ -52,7 +52,7 @@ module.exports = app => {
       allowNull: false,
     },
     name: {
-      type: STRING(30),
+      type: STRING(60),
       allowNull: false,
     },
     unitName: {

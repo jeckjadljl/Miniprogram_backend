@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-21 20:38:21
+ * @LastEditTime: 2025-06-24 17:44:27
  * @FilePath: \Mini_program_backend\app\model\member_goods.js
  * @Description:
  *
@@ -145,6 +145,13 @@ module.exports = app => {
           through: { attributes: [] },
         },
       ],
+    });
+  };
+
+  MemberGoods.getByGoodsId = async params => {
+    const { goods_id } = params;
+    return await MemberGoods.findOne({
+      where: { goods_id },
     });
   };
 

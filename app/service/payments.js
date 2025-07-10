@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-25 16:25:26
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-12 13:41:24
+ * @LastEditTime: 2025-07-10 15:23:17
  * @FilePath: \Mini_program_backend\app\service\payments.js
  * @Description:
  *
@@ -27,14 +27,7 @@ class PaymentsService extends Service {
     const now = new Date();
     const expireTime = new Date(now.getTime() + 30 * 60000);
     const time_expire = expireTime.toISOString().split(".")[0] + "+08:00"; // 北京时间
-    // const generateOutTradeNo = () => {
-    //   // 组合生成规则：时间戳(13位) + 商户号后4位 + 6位随机数
-    //   const timestamp = Date.now();
-    //   const mchSuffix = this.config.mchId.slice(-4); // 获取商户号后四位
-    //   const random = Math.floor(Math.random() * 899999 + 100000); // 6位随机数
 
-    //   return `MCH${mchSuffix}T${timestamp}R${random}`;
-    // };
     const amountInYuan = orderData.amount.total;
     const amountInCents = Math.round(amountInYuan * 100); // 转换为分，并四舍五入
     // const amountInCents = 10;
@@ -113,12 +106,26 @@ class PaymentsService extends Service {
     }
   }
 
+  async groupBuyPayment(orderData = {}) {
+    const { business_order_id } = orderData;
+    const payments = await this.createPayment(orderData);
+    if (!payments) {
+      throw new Error("创建支付订单失败");
+    }
+
+    return {
+      autoCancelTime: 1800,
+      orderIds: business_order_id,
+      payments,
+    };
+  }
+
   // 提取订单号生成方法（原createPayment中的逻辑）
   generateOutTradeNo() {
     const timestamp = Date.now();
-    const mchSuffix = this.config.mchId.slice(-4);
+    const mchSuffix = this.config.mchId.slice(-6);
     const random = Math.floor(Math.random() * 899999 + 100000);
-    return `MCH${mchSuffix}T${timestamp}R${random}`;
+    return `M${timestamp}${random}${mchSuffix}`;
   }
 
   async closeOrder(outTradeNo) {
@@ -842,6 +849,202 @@ class PaymentsService extends Service {
       remaining: ttl,
       expiresAt: new Date(parseInt(createdTimestamp) + 1800 * 1000),
     };
+  }
+
+  async getOrdersForDelivery(transactionId) {
+    const { ctx, app } = this;
+
+    // 1. 通过交易单号获取支付记录
+    const payment = await ctx.model.Payments.findOne({
+      where: { transaction_id: transactionId },
+    });
+
+    if (!payment) {
+      throw new Error("支付记录不存在");
+    }
+
+    // 2. 获取关联的所有订单（使用新的查询方式）
+
+    const orderPromises = payment.business_order_id.map(
+      orderId =>
+        console.log("订单ID:", orderId) ||
+        ctx.service.order.getOrderFromPayments({
+          uuid: orderId,
+        })
+    );
+
+    const orders = await Promise.all(orderPromises);
+
+    return orders.filter(Boolean).map(order => ({
+      orderId: order.uuid,
+      items: order.orderitems.map(item => ({
+        名称: item.name,
+        规格: item.spec,
+        价格: item.payment_amount,
+        数量: item.quantity,
+      })),
+      收货信息: {
+        联系人: order.address.linkMan,
+        电话: order.address.linkPhone,
+        地址: `${order.address.province} ${order.address.city} ${order.address.district} ${order.address.detail}`,
+      },
+    }));
+  }
+
+  /**
+   *
+   * 微信支付分
+   */
+
+  // 新增微信支付分创建订单方法
+  async createPaymentScoreOrder(orderParams = {}) {
+    const { mchId, appId, notify_url, service_id } = this.config;
+    const url = "/v3/payscore/serviceorder";
+    const method = "POST";
+
+    const out_order_no = this.generateOutTradeNo().replace("MCH", "PSF"); // 生成支付分专用订单号
+    const body = JSON.stringify({
+      out_order_no,
+      service_id,
+      service_introduction:
+        orderParams.service_introduction || "满满严料铺服务",
+      time_range: {
+        start_time: new Date().toISOString().split(".")[0] + "+08:00",
+        end_time:
+          orderParams.end_time ||
+          new Date(Date.now() + 3600 * 1000).toISOString().split(".")[0] +
+            "+08:00",
+      },
+      risk_fund: {
+        name: "ESTIMATE_ORDER_COST",
+        amount: Math.round(orderParams.estimate_amount * 100),
+        description: "预估费用",
+      },
+      notify_url: `${notify_url}/payscore`, // 支付分专用回调地址
+      openid: orderParams.openid,
+      post_payments: orderParams.post_payments || [],
+      post_discounts: orderParams.post_discounts || [],
+      location: orderParams.location || {
+        start_location: "上海满满严料铺",
+        end_location: "上海满满严料铺",
+      },
+    });
+
+    // 获取支付分专用Authorization
+    const wechatPayUtil = new WechatPayUtil(this.ctx);
+    const authData = await wechatPayUtil.getAuthorization(method, url, body);
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${authData.mchid}",nonce_str="${authData.nonce_str}",signature="${authData.signature}",timestamp="${authData.timestamp}",serial_no="${authData.serial_no}"`,
+    };
+
+    try {
+      const response = await axios.post(
+        `https://api.mch.weixin.qq.com${url}`,
+        body,
+        { headers }
+      );
+
+      // 保存支付分订单数据
+      await this.savePaymentScoreData({
+        ...JSON.parse(body),
+        wechatResponse: response.data,
+      });
+
+      return {
+        appId,
+        service_id,
+        out_order_no,
+        package: response.data.package,
+        sign_type: "RSA",
+        timestamp: authData.timestamp,
+        nonce_str: authData.nonce_str,
+        sign: authData.signature,
+      };
+    } catch (error) {
+      this.ctx.logger.error("支付分订单创建失败:", error);
+      throw new Error(
+        `支付分订单创建失败: ${error.response?.data?.message || error.message}`
+      );
+    }
+  }
+
+  // 新增支付分订单存储方法
+  async savePaymentScoreData(orderData) {
+    const { ctx } = this;
+    const paymentData = {
+      user_id: ctx.state.user?.uid,
+      out_order_no: orderData.out_order_no,
+      service_id: orderData.service_id,
+      total_amount: orderData.risk_fund.amount,
+      payment_status: "created",
+      payment_method: "wechat_payscore",
+      extra_data: {
+        wechatResponse: orderData.wechatResponse,
+        location: orderData.location,
+        time_range: orderData.time_range,
+      },
+    };
+
+    const result = await ctx.model.PaymentScores.saveNew(paymentData);
+    if (!result) {
+      throw new Error("支付分订单保存失败");
+    }
+    return result;
+  }
+
+  async completePaymentScoreOrder(params = {}) {
+    const { mchId, service_id } = this.config;
+    const { out_order_no, real_service_end_time } = params;
+    const url = `/v3/payscore/serviceorder/${out_order_no}/complete`;
+    const method = "POST";
+
+    const body = JSON.stringify({
+      service_id,
+      mchid: mchId,
+      type: "OrderedService",
+      finish_time: new Date().toISOString().split(".")[0] + "+08:00",
+      real_service_end_time:
+        real_service_end_time ||
+        new Date().toISOString().split(".")[0] + "+08:00",
+    });
+
+    const wechatPayUtil = new WechatPayUtil(this.ctx);
+    const authData = await wechatPayUtil.getAuthorization(method, url, body);
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${authData.mchid}",nonce_str="${authData.nonce_str}",signature="${authData.signature}",timestamp="${authData.timestamp}",serial_no="${authData.serial_no}"`,
+    };
+
+    try {
+      const response = await axios.post(
+        `https://api.mch.weixin.qq.com${url}`,
+        body,
+        { headers }
+      );
+
+      // 更新本地支付分订单状态
+      await this.ctx.model.PaymentScores.update(
+        {
+          payment_status: "completed",
+          complete_time: new Date(),
+          trade_state: response.data.service_state,
+          transaction_id: response.data.transaction_id,
+        },
+        {
+          where: { out_order_no },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      this.ctx.logger.error("支付分订单完结失败:", error);
+      throw new Error(
+        `支付分订单完结失败: ${error.response?.data?.message || error.message}`
+      );
+    }
   }
 }
 

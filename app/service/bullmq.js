@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-06-02 22:35:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-10 22:33:44
+ * @LastEditTime: 2025-06-30 21:23:24
  * @FilePath: \Mini_program_backend\app\service\bullmq.js
  * @Description:
  *
@@ -79,6 +79,19 @@ class BullMQService extends Service {
     });
   }
 
+  async getDelayedJob(queueName, jobName, jobData) {
+    try {
+      const queue = this.getQueue(queueName); // 使用服务内部的队列获取方法
+      const jobs = await queue.getJobs(["delayed"]);
+
+      return jobs.find(
+        job => job.name === jobName && job.data.groupId === jobData.groupId // 精确匹配 groupId
+      );
+    } catch (e) {
+      this.ctx.logger.error("获取延迟任务失败:", e);
+      return null;
+    }
+  }
   // 创建工作处理器
   createWorker(queueName, processor) {
     const { app } = this;

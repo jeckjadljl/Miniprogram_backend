@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 17:23:38
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-09 23:46:03
+ * @LastEditTime: 2025-07-04 12:07:02
  * @FilePath: \Mini_program_backend\app\service\order.js
  * @Description:
  *
@@ -81,6 +81,7 @@ class OrderService extends Service {
       orderAttributes: [
         "uuid",
         "version",
+        "orgUuid",
         "order_status",
         "billNumber",
         "address_id",
@@ -202,8 +203,9 @@ class OrderService extends Service {
    * @param userName
    * @return {Object} 创建的订单实例
    */
-  async saveNew(goodsOrder = {}) {
+  async saveNew(goodsOrder = {}, options = {}) {
     const { app, ctx } = this;
+    const { transaction } = options;
     const { Order, User } = app.model;
     const { address_id, user_id, userName, ordersList = [] } = goodsOrder;
     console.log("订单数据:", goodsOrder);
@@ -243,7 +245,7 @@ class OrderService extends Service {
         order_status: "initial",
       };
 
-      const orderUuid = await Order.saveNew(processedOrder);
+      const orderUuid = await Order.saveNew(processedOrder, { transaction });
       if (orderUuid) {
         orderUuids.push(orderUuid);
         this.ctx.logger.info(`订单创建成功: ${orderUuid}`);
@@ -276,6 +278,7 @@ class OrderService extends Service {
       openid: user.openid,
       totalAmount,
       orderUuids,
+      orgUuid: ordersList[0].orgUuid,
       autoCancelTime: autoCancelSeconds,
     };
   }
@@ -292,7 +295,9 @@ class OrderService extends Service {
       ...params,
       orderAttributes: [
         "uuid",
+        "user_id",
         "order_status",
+        "order_type",
         "orgUuid",
         [
           Sequelize.fn("ROUND", Sequelize.col("total_amount"), 2),
@@ -492,6 +497,7 @@ class OrderService extends Service {
         "orgUuid",
         "lastModifiedTime",
         "createdTime",
+        "address_id",
       ],
       orderLineAttributes: [
         "uuid",
@@ -518,6 +524,16 @@ class OrderService extends Service {
           "discount_amount",
         ],
         "quantity",
+      ],
+      orderAddressAttributes: [
+        "address_id",
+        "linkMan",
+        "linkPhone",
+        "province",
+        "city",
+        "district",
+        "detail",
+        "is_default",
       ],
     });
 

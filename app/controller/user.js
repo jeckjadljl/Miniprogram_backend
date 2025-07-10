@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:35:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-04-07 12:11:27
+ * @LastEditTime: 2025-07-09 21:09:09
  * @FilePath: \Mini_program_backend\app\controller\user.js
  * @Description:
  *
@@ -57,7 +57,7 @@ class UserController extends Controller {
   // 上传用户头像
   async uploadAvatar() {
     const { ctx, service } = this;
-    const { avatarMD5 } = ctx.request.body;
+    const { avatarMD5, mode, uuid } = ctx.request.body;
     const file = ctx.request.files?.[0];
 
     if (!file) {
@@ -76,10 +76,24 @@ class UserController extends Controller {
       console.log("上传的 filePath:", filePath);
 
       // 调用 COS 上传服务
-      const avatarUrl = await service.cos.uploadAvatar(avatarMD5, filePath);
+      const { avatarMD5: newMD5, avatarUrl } = await service.cos.uploadAvatar(
+        avatarMD5,
+        filePath
+      );
       console.log(avatarUrl);
 
-      this.success(avatarUrl);
+      await service.userProfile.saveModify({
+        user_id: uuid,
+        avatarUrl,
+      });
+
+      if (mode === "userInfo") {
+        // 更新用户信息
+        const user = await service.user.updateUser(uuid, { avatar: avatarUrl });
+        this.success({ avatarMD5: newMD5, avatarUrl: user.avatar });
+      } else {
+        this.success({ avatarMD5: newMD5, avatarUrl });
+      }
     } catch (error) {
       const { message } = error;
       console.error("上传头像出错:", message);

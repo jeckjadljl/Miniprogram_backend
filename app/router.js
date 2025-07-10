@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-15 12:40:07
+ * @LastEditTime: 2025-07-09 21:35:40
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -49,6 +49,8 @@ module.exports = app => {
     goodsPromotion,
     goodsPricing,
     groups,
+    userProfile,
+    posts,
   } = controller;
 
   router.get("/", home.index);
@@ -131,7 +133,7 @@ module.exports = app => {
   router.post("/logistics/queryTrace", logistics.queryTrace);
 
   // 地址设置
-  router.get("/address/getAddress", address.getAddress);
+  router.post("/address/getAddress", address.getAddress);
   router.post("/address/getDefaultAddress", address.getDefaultAddress);
   router.post("/address/setDefaultAddress", address.setDefaultAddress);
   router.post("/address/deleteAddress", address.deleteAddress);
@@ -199,6 +201,8 @@ module.exports = app => {
   router.post("/payments/getByOutTradeNo", payments.getByOutTradeNo);
   // 获取支付订单自动取消差值
   router.post("/payments/:id/autoCancelTime", payments.getAutoCancelTime);
+  // 使用transaction_id获取订单信息
+  router.post("/payments/getDeliveryInfo", payments.getDeliveryInfo);
 
   // 获取会员卡数据
   router.get("/membership/getAll", membership.getAll);
@@ -215,6 +219,7 @@ module.exports = app => {
     "/memberGoods/getByPromotionName",
     memberGoods.getByPromotionName
   );
+  router.post("/memberGoods/getByGoodsId", memberGoods.getByGoodsId);
   router.post("/memberGoods/validateExchange", memberGoods.validateExchange);
 
   // 获取用户会员等级
@@ -227,6 +232,18 @@ module.exports = app => {
   router.post("/group/saveNew", groups.createGroup);
   router.post("/group/getGroupStatus", groups.getGroupStatus);
   router.post("/group/joinGroup", groups.joinGroup);
+  router.post("/group/getGroupById", groups.getGroupById);
+  router.post("/group/getGroupByOrderId", groups.getGroupByOrderId);
+
+  // 满豆分享（生活号）
+  router.post("/userProfile/getUserProfile", userProfile.getOrCreateProfile);
+
+  // 帖子互动
+  router.post("/posts/saveNew", posts.saveNew);
+  router.post("/posts/getPostsByUserId", posts.getPostsByUserId);
+  router.post("/posts/waterfull", posts.getWaterfullPostsList);
+  router.post("/posts/videoFeed", posts.getVideoFeedList);
+  router.post("/posts/saveModify", posts.saveModify);
 
   /**
    * 暂时无用

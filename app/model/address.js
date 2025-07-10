@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-13 12:00:43
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-01-27 17:58:02
+ * @LastEditTime: 2025-07-04 15:51:09
  * @FilePath: \Mini_program_backend\app\model\address.js
  * @Description:
  *
@@ -29,9 +29,14 @@ module.exports = app => {
    * @return {object|null} - 查找结果
    */
   Address.get = async ({ address_id, user_id, attributes }) => {
+    const where = { address_id };
+    if (user_id !== null && user_id !== undefined) {
+      where.user_id = user_id;
+    }
+    console.log("查询地址条件:", where);
     return await Address.findOne({
       attributes,
-      where: { address_id, user_id },
+      where,
     });
   };
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-11 17:00:44
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-26 00:36:38
+ * @LastEditTime: 2025-07-06 22:18:22
  * @FilePath: \Mini_program_backend\app\service\goods_specifications.js
  * @Description:
  *
@@ -76,7 +76,6 @@ class GoodsSpecificationsService extends Service {
         await Promise.all(uploadPromises);
 
         const specData = {
-          goods_id: item.goods_id,
           specName: item.specName,
           specValue: item.specValue,
           specPrice: parseFloat(item.specPrice) || 0,
@@ -85,6 +84,7 @@ class GoodsSpecificationsService extends Service {
           specImages: item.specImages || null,
           specPosters: item.specPosters || null,
           isDefault: item.isDefault || false,
+          ...item,
         };
 
         return await ctx.model.GoodsSpecifications.saveNew(specData);

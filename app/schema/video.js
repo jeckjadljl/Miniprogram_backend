@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-22 22:58:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-17 11:11:15
+ * @LastEditTime: 2025-07-07 22:30:49
  * @FilePath: \Mini_program_backend\app\schema\video.js
  * @Description:
  *
@@ -53,6 +53,10 @@ module.exports = app => {
     },
     tags: {
       type: STRING(255),
+      allowNull: true,
+    },
+    goods_id: {
+      type: STRING(38),
       allowNull: true,
     },
     elements_id: {
