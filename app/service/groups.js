@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-05-18 12:12:00
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-30 21:23:09
+ * @LastEditTime: 2025-07-19 16:21:47
  * @FilePath: \Mini_program_backend\app\service\groups.js
  * @Description:
  *
@@ -101,7 +101,7 @@ class GroupService extends Service {
               user_id: order.user_id,
               points: min_points_amt,
               source: "group_buy",
-              description: `团购 ${group.group_no} 健康币预支付`,
+              description: `团购 ${groupInstance.group_no} 健康币预支付`,
             });
             this.ctx.logger.info(
               `用户${order.user_id}预支付${min_points_amt}健康币发起团购`

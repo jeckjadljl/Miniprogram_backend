@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-01 23:37:50
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-15 23:51:46
+ * @LastEditTime: 2025-07-22 11:17:03
  * @FilePath: \Mini_program_backend\app\model\goods_specifications.js
  * @Description:
  *
@@ -29,7 +29,7 @@ module.exports = app => {
       as: "goods",
     });
     GoodsSpecifications.hasOne(GoodsSpecColor, {
-      foreignKey: "spec_id",
+      foreignKey: "spec_color_id",
     });
     GoodsSpecifications.hasMany(GoodsPricing, {
       foreignKey: "spec_id",

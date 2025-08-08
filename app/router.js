@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:35:40
+ * @LastEditTime: 2025-08-08 16:47:28
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -51,7 +51,13 @@ module.exports = app => {
     groups,
     userProfile,
     posts,
+    userWallet,
+    weRun,
+    upload,
+    memberGoodsPackage,
+    memberGoodsPackageItem,
   } = controller;
+  const { runRecord, team, teamActivity } = weRun;
 
   router.get("/", home.index);
 
@@ -80,6 +86,10 @@ module.exports = app => {
   router.post("/user/saveModify", user.saveModify);
   // 获取管理员用户(暂用)
   router.post("/user/getUserByName", user.getUserByName);
+  // 上传小程序端下载的图片
+  router.post("/upload/uploadWeImages", upload.uploadWeImages);
+  // 上传图片
+  // router.post("/upload", upload.upload);
 
   // 刷新Token
   router.post("/auth/refreshToken", auth.refreshAccessToken);
@@ -203,6 +213,25 @@ module.exports = app => {
   router.post("/payments/:id/autoCancelTime", payments.getAutoCancelTime);
   // 使用transaction_id获取订单信息
   router.post("/payments/getDeliveryInfo", payments.getDeliveryInfo);
+  // 剩余钱包余额抵扣
+  router.post(
+    "/payments/deductionForWalletBalance",
+    payments.deductionForWalletBalance
+  );
+
+  // 钱包（资金池）
+  router.post("/userWallet/getOrCreateWallet", userWallet.getOrCreateWallet);
+  router.post("/userWallet/updateBalance", userWallet.updateBalance);
+  router.post("/userWallet/getAllWalletRecord", userWallet.getAllWalletRecord);
+  // 佣金池
+  router.post(
+    "/userRewardsPool/updateRewardsBalance",
+    userWallet.updateRewardsBalance
+  );
+  router.post(
+    "/userRewards/getAllRewardsRecord",
+    userWallet.getAllRewardsRecord
+  );
 
   // 获取会员卡数据
   router.get("/membership/getAll", membership.getAll);
@@ -222,11 +251,33 @@ module.exports = app => {
   router.post("/memberGoods/getByGoodsId", memberGoods.getByGoodsId);
   router.post("/memberGoods/validateExchange", memberGoods.validateExchange);
 
+  // 会员商品组合策略
+  router.post(
+    "/memberGoods/saveNewMemberGoodsGroup",
+    memberGoods.saveNewMemberGoodsGroup
+  );
+  router.post(
+    "/memberGoods/getAllGroupByCardId",
+    memberGoods.getAllGroupByCardId
+  );
+  router.post(
+    "/memberGoods/validateComboSelection",
+    memberGoods.validateComboSelection
+  );
+
+  // 会员商品礼包
+  router.post(
+    "/memberGoodsPackage/getPackageByCardId",
+    memberGoodsPackage.getPackageByCardId
+  );
+
   // 获取用户会员等级
   router.post("/membership/getMembershipLevel", membership.getMembershipLevel);
 
   // 检查用户是否能够使用健康币
   router.post("/points/checkForAvailable", points.checkForAvailable);
+  // 获取健康币记录
+  router.post("/points/getAllPointsRecords", points.getAllPointsRecords);
 
   // 团购
   router.post("/group/saveNew", groups.createGroup);
@@ -244,6 +295,44 @@ module.exports = app => {
   router.post("/posts/waterfull", posts.getWaterfullPostsList);
   router.post("/posts/videoFeed", posts.getVideoFeedList);
   router.post("/posts/saveModify", posts.saveModify);
+
+  /**
+   * 战队打卡
+   */
+  // 获取战队打卡页面的轮播图
+  router.get("/weRun/team/getweRunCarousel", posters.getweRunCarousel);
+
+  // 战队相关接口
+  router.post("/weRun/team/create", team.create);
+  router.post("/weRun/team/join", team.join);
+  router.post("/weRun/team/ranking", team.ranking);
+  router.post("/weRun/team/info", team.info);
+
+  // 微信运动打卡记录
+  router.post("/weRun/runRecord/submit", runRecord.submit);
+  router.post("/weRun/runRecord/modify", runRecord.modify);
+  router.get("/weRun/runRecord/history", runRecord.history);
+  router.get("/weRun/runRecord/calendar", runRecord.calendar);
+  router.post("/weRun/runRecord/getUserTeamData", runRecord.getUserTeamData);
+  router.post("/weRun/runRecord/pendingRecords", runRecord.pendingRecords);
+  router.post("/weRun/runRecord/review", runRecord.review);
+  router.post("/weRun/runRecord/submitReview", runRecord.submitReview);
+  router.post("/weRun/runRecord/stats", runRecord.stats);
+  router.post(
+    "/weRun/runRecord/getReviewedRecords",
+    runRecord.getReviewedRecords
+  );
+  router.post("/weRun/runRecord/getRecordDetail", runRecord.getRecordDetail);
+  router.post("/weRun/runRecord/getReviewedCount", runRecord.getReviewedCount);
+
+  // 战队活动
+  router.post("/weRun/activity/create", teamActivity.create);
+  router.post("/weRun/activity/join", teamActivity.join);
+  router.post("/weRun/activity/getActivityList", teamActivity.getActivityList);
+  router.post(
+    "/weRun/activity/getActivityDetail",
+    teamActivity.getActivityDetail
+  );
 
   /**
    * 暂时无用
@@ -275,10 +364,20 @@ module.exports = app => {
   // 权益&权限
   router.post("/permissions/saveNew", permissions.saveNew);
   router.post("/memberPrivileges/saveNew", memberPrivileges.saveNew);
+  router.post("/memberPrivileges/saveModify", memberPrivileges.saveModify);
 
   // 会员卡/会员商品
   router.post("/memberGoods/saveNew", memberGoods.saveNew);
   router.post("/memberGoods/saveModify", memberGoods.saveModify);
+
+  // 会员卡礼包
+  router.post("/memberGoodsPackage/saveNew", memberGoodsPackage.saveNew);
+
+  // 会员商品礼包项
+  router.post(
+    "/memberGoodsPackageItem/saveNew",
+    memberGoodsPackageItem.saveNew
+  );
 
   // 抵用券
   router.post("/voucher_rules/saveNew", voucherRules.saveNew);

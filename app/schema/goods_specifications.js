@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-01 23:15:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-09 17:15:10
+ * @LastEditTime: 2025-07-22 11:14:59
  * @FilePath: \Mini_program_backend\app\schema\goods_specifications.js
  * @Description:
  *
@@ -22,6 +22,10 @@ module.exports = app => {
     goods_id: {
       type: STRING(38),
       allowNull: false,
+    },
+    spec_color_id: {
+      type: STRING(38),
+      allowNull: true,
     },
     member_goods_id: {
       type: STRING(38),

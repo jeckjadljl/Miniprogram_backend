@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:14:37
+ * @LastEditTime: 2025-08-05 00:43:58
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -41,6 +41,8 @@ module.exports = app => {
       Posts,
       Interactions,
     } = model;
+    const { Team, TeamMembers, TeamActivity, TeamMembersActivity, RunRecord } =
+      model.WeRun;
     User.belongsToMany(Role, {
       through: UserRoles,
       foreignKey: "user_id",
@@ -84,12 +86,33 @@ module.exports = app => {
       foreignKey: "reply_user_id",
       as: "interactions",
     });
+    User.belongsToMany(model.WeRun.Team, {
+      through: model.WeRun.TeamMembers,
+      foreignKey: "user_id",
+      otherKey: "team_id",
+      as: "teams",
+      constraints: false,
+    });
+    User.belongsToMany(TeamActivity, {
+      through: TeamMembersActivity,
+      foreignKey: "user_id",
+      otherKey: "team_activity_id",
+    });
+    User.hasMany(RunRecord, {
+      foreignKey: "user_id",
+      as: "run_records",
+    });
   };
 
   User.saveModify = async user => {
     const { uuid } = user;
     await User.update(user, { where: { uuid } });
-    await model.UserProfile.saveModify({ user_id: uuid, ...user });
+
+    // 当不存在birthday字段时更新UserProfile
+    if (("user_name" || "avatar") in user) {
+      await model.UserProfile.saveModify({ user_id: uuid, ...user });
+    }
+
     return uuid;
   };
 
@@ -218,6 +241,21 @@ module.exports = app => {
     await user.save();
 
     return newBalance;
+  };
+
+  User.findTeamMember = async ({ user_id, attributes, teamAttributes }) => {
+    return await User.findOne({
+      include: [
+        {
+          model: model.WeRun.Team,
+          attributes: teamAttributes,
+          as: "teams",
+          through: { attributes: [] },
+        },
+      ],
+      attributes,
+      where: { uuid: user_id },
+    });
   };
 
   return User;

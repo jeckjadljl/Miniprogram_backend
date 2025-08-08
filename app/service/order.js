@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-15 17:23:38
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-04 12:07:02
+ * @LastEditTime: 2025-07-22 10:40:56
  * @FilePath: \Mini_program_backend\app\service\order.js
  * @Description:
  *
@@ -111,6 +111,14 @@ class OrderService extends Service {
         [
           Sequelize.fn("ROUND", Sequelize.col("order.discount_amount"), 2),
           "discount_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("commission_amount"), 2),
+          "commission_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("funds_amount"), 2),
+          "funds_amount",
         ],
       ],
       orderLineAttributes: [
@@ -226,6 +234,19 @@ class OrderService extends Service {
     const totalAmount = calculateTotalAmount(ordersList);
     console.log(`所有订单的总金额: ${totalAmount}`);
 
+    function blanceAmount(ordersList) {
+      return {
+        commission_amount: ordersList.reduce(
+          (sum, order) => sum + order.commission_amount,
+          0
+        ),
+        funds_amount: ordersList.reduce(
+          (sum, order) => sum + order.funds_amount,
+          0
+        ),
+      };
+    }
+
     // await User.cumulativeSpent(user_id, totalAmount);
     const autoCancelSeconds = 1800; // 保持与定时任务一致
 
@@ -249,6 +270,33 @@ class OrderService extends Service {
       if (orderUuid) {
         orderUuids.push(orderUuid);
         this.ctx.logger.info(`订单创建成功: ${orderUuid}`);
+
+        const useCommissionBlance = blanceAmount(ordersList);
+        if (useCommissionBlance.commission_amount > 0) {
+          await ctx.service.rewardsPool.updateBalance(
+            {
+              user_id,
+              amount: useCommissionBlance.commission_amount,
+              txn_type: "CONSUME",
+              order_id: orderUuid,
+              remark: "订单抵扣佣金",
+              description: `订单抵扣佣金${useCommissionBlance.commission_amount}`,
+            },
+            { transaction }
+          );
+        } else if (useCommissionBlance.funds_amount > 0) {
+          await ctx.service.userWallet.updateBalance(
+            {
+              user_id,
+              amount: useCommissionBlance.funds_amount,
+              txn_type: "CONSUME",
+              order_id: orderUuid,
+              remark: "订单抵扣资金",
+            },
+            { transaction }
+          );
+        }
+
         // 添加30分钟后取消订单的延迟任务
         // await ctx.service.bullmq.addDelayJob(
         //   "taskQueue",
@@ -314,6 +362,14 @@ class OrderService extends Service {
         [
           Sequelize.fn("ROUND", Sequelize.col("discount_amount"), 2),
           "discount_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("commission_amount"), 2),
+          "commission_amount",
+        ],
+        [
+          Sequelize.fn("ROUND", Sequelize.col("funds_amount"), 2),
+          "funds_amount",
         ],
         "address_id",
       ],
@@ -501,6 +557,12 @@ class OrderService extends Service {
       ],
       orderLineAttributes: [
         "uuid",
+        "member_card_id",
+        "member_card_name",
+        "member_card_images",
+        "member_card_salePrice",
+        "member_goods_id",
+        "member_packs_name",
         "voucher_id",
         "voucher_name",
         "voucher_image",

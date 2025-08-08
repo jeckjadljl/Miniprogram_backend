@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:35:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:09:09
+ * @LastEditTime: 2025-08-05 11:55:28
  * @FilePath: \Mini_program_backend\app\controller\user.js
  * @Description:
  *
@@ -75,22 +75,39 @@ class UserController extends Controller {
       const filePath = String(file.filepath); // 确保 filePath 是字符串
       console.log("上传的 filePath:", filePath);
 
-      // 调用 COS 上传服务
-      const { avatarMD5: newMD5, avatarUrl } = await service.cos.uploadAvatar(
-        avatarMD5,
-        filePath
-      );
+      // 设置30秒上传超时
+      const uploadTimeoutMs = 30000;
+      const uploadPromise = await service.cos.uploadAvatar(avatarMD5, filePath);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(
+          () => reject(new Error("上传超时，请重试")),
+          uploadTimeoutMs
+        );
+      });
+
+      // 等待上传完成或超时
+      const { avatarMD5: newMD5, avatarUrl } = await Promise.race([
+        uploadPromise,
+        timeoutPromise,
+      ]);
       console.log(avatarUrl);
+
+      // 调用 COS 上传服务
+      // const { avatarMD5: newMD5, avatarUrl } = await service.cos.uploadAvatar(
+      //   avatarMD5,
+      //   filePath
+      // );
+      // console.log(avatarUrl);
 
       await service.userProfile.saveModify({
         user_id: uuid,
-        avatarUrl,
+        avatar: avatarUrl,
       });
 
       if (mode === "userInfo") {
         // 更新用户信息
-        const user = await service.user.updateUser(uuid, { avatar: avatarUrl });
-        this.success({ avatarMD5: newMD5, avatarUrl: user.avatar });
+        await service.user.updateUser(uuid, { avatar: avatarUrl });
+        this.success({ avatarMD5: newMD5, avatarUrl });
       } else {
         this.success({ avatarMD5: newMD5, avatarUrl });
       }

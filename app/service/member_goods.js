@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-12 09:21:27
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-24 16:58:04
+ * @LastEditTime: 2025-07-24 23:14:58
  * @FilePath: \Mini_program_backend\app\service\member_goods.js
  * @Description:
  *
@@ -72,6 +72,7 @@ class Member_goodsService extends Service {
       ...params,
       memberGoodsAttributes: [
         "id",
+        "member_goods_group_id",
         "member_packs_name",
         "member_packs_salePrice",
         "voucher_id",
@@ -159,6 +160,112 @@ class Member_goodsService extends Service {
     }
 
     return true;
+  }
+
+  /**
+   * 会员商品组合策略
+   */
+
+  async validateComboSelection(selectedItems, combinationRules) {
+    if (!Array.isArray(selectedItems)) {
+      const error = new Error("商品选择参数格式错误");
+      error.name = "INVALID_ITEMS_FORMAT";
+      throw error;
+    }
+
+    // 1. 按group_id分组统计
+    const groupCounts = selectedItems.reduce((acc, item) => {
+      acc[item.group_id] = (acc[item.group_id] || 0) + 1;
+      return acc;
+    }, {});
+
+    // 2. 验证每个分组
+    for (const groupRule of combinationRules.groups) {
+      const count = groupCounts[groupRule.group_id] || 0;
+
+      console.log("count", count);
+      if (count < groupRule.min) {
+        const error = new Error(
+          `至少需要选择${groupRule.min}件${groupRule.group_id}`
+        );
+        error.name = "E_NOT_ENOUGH_ITEMS";
+        throw error;
+      }
+      if (groupRule.max && count > groupRule.max) {
+        const error = new Error(
+          `最多只能选择${groupRule.max}件${groupRule.group_id}`
+        );
+        error.name = "MAX_EXCEEDED";
+        throw error;
+      }
+    }
+
+    // 3. 验证总数
+    const total = selectedItems.length;
+    if (total < combinationRules.min_total) {
+      const error = new Error(
+        `至少需要选择${combinationRules.min_total}件商品`
+      );
+      error.name = "MIN_TOTAL_MISMATCH";
+      throw error;
+    }
+    if (combinationRules.max_total && total > combinationRules.max_total) {
+      const error = new Error(
+        `最多只能选择${combinationRules.max_total}件商品`
+      );
+      error.name = "MAX_TOTAL_MISMATCH";
+      throw error;
+    }
+
+    return true;
+  }
+
+  // 组合规则验证方法
+  validateComboRules(rules) {
+    if (!rules.groups || !Array.isArray(rules.groups)) {
+      throw new Error("组合规则格式错误：缺少有效分组配置");
+    }
+
+    rules.groups.forEach(group => {
+      if (!group.group_id || !group.min) {
+        throw new Error("分组规则必须包含group_id和min字段");
+      }
+    });
+
+    if (
+      rules.min_total &&
+      rules.max_total &&
+      rules.min_total > rules.max_total
+    ) {
+      throw new Error("最小总数不能大于最大总数");
+    }
+  }
+
+  async saveNewMemberGoodsGroup(params = {}) {
+    const { app } = this;
+    const { user_id, userName } = params;
+    try {
+      // 验证组合规则格式
+      if (params.combination_rules) {
+        this.validateComboRules(params.combination_rules);
+      }
+
+      const userInfo = app.getCrateInfo(user_id, userName);
+
+      const paramsData = { ...params, ...userInfo };
+
+      return await app.model.MemberGoodsGroup.saveNew(paramsData);
+    } catch (err) {
+      app.logger.error("[saveNewMemberGoodsGroup error]", err);
+      throw err;
+    }
+  }
+
+  async getAllGroupByCardId(params = {}) {
+    const { app } = this;
+    // 获取某个会员卡下的组合策略
+    const result = await app.model.MemberGoodsGroup.getAllGroupByCardId(params);
+    return result;
   }
 }
 

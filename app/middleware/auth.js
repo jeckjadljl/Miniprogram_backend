@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:38:22
+ * @LastEditTime: 2025-08-08 16:36:08
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -33,6 +33,7 @@ module.exports = options => {
       "/referral/saveNew",
       "/user/uploadAvatar",
       "/user/getUserByUuid",
+      "/user/saveModify",
       "/elements/saveNew",
       "/elements/getAll",
       "/elements/get",
@@ -53,6 +54,7 @@ module.exports = options => {
       "/membership/getAll",
       "/permissions/saveNew",
       "/memberPrivileges/saveNew",
+      "/memberPrivileges/saveModify",
       "/memberPrivileges/getAll",
       "/memberGoods/getGoodsByCardId",
       "/memberGoods/saveNew",
@@ -100,6 +102,7 @@ module.exports = options => {
       "/promotion/saveModify",
       "/memberGoods/validateExchange",
       "/memberGoods/getByGoodsId",
+      "/memberGoods/saveNewMemberGoodsGroup",
       "/admin/queues",
       "/orderReview/saveNew",
       "/orderReview/saveLikes",
@@ -108,12 +111,30 @@ module.exports = options => {
       "/order/getOrderBill",
       "/payments/:id/autoCancelTime",
       "/payments/getByOutTradeNo",
+      "/payments/deductionForWalletBalance",
       "/points/saveNew",
       "/payments/getDeliveryInfo",
       "/address/getAddress",
       "/posts/waterfull",
       "/posts/saveNew",
       "/posts/saveModify",
+      "/userWallet/getOrCreateWallet",
+      "/userWallet/getAllWalletRecord",
+      "/userRewards/getAllRewardsRecord",
+      "/weRun/team/create",
+      "/weRun/team/info",
+      "/weRun/team/join",
+      "/weRun/team/ranking",
+      "/weRun/team/getweRunCarousel",
+      "/weRun/runRecord/submit",
+      "/weRun/runRecord/pendingRecords",
+      "/weRun/runRecord/submitReview",
+      "/upload/uploadWeImages",
+      "/weRun/activity/getActivityDetail",
+      "/weRun/activity/join",
+      "/memberGoodsPackage/saveNew",
+      "/memberGoodsPackageItem/saveNew",
+      "/memberGoodsPackage/getPackageByCardId",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-11 17:00:44
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-06 22:18:22
+ * @LastEditTime: 2025-07-22 01:09:26
  * @FilePath: \Mini_program_backend\app\service\goods_specifications.js
  * @Description:
  *
@@ -79,7 +79,7 @@ class GoodsSpecificationsService extends Service {
           specName: item.specName,
           specValue: item.specValue,
           specPrice: parseFloat(item.specPrice) || 0,
-          stock: item.stock ? parseInt(item.stock) : null,
+          stock: item.stock || null,
           specThumbnail: item.specThumbnail || null,
           specImages: item.specImages || null,
           specPosters: item.specPosters || null,

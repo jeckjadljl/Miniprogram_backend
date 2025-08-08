@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-20 16:55:29
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-23 18:17:42
+ * @LastEditTime: 2025-08-08 16:24:15
  * @FilePath: \Mini_program_backend\app\schema\posters.js
  * @Description:
  *
@@ -45,7 +45,7 @@ module.exports = app => {
       },
     },
     purpose: {
-      type: ENUM("home", "elements", "goods", "user"),
+      type: ENUM("home", "weRun", "elements", "goods", "user"),
       allowNull: false,
     },
     purposeType: {

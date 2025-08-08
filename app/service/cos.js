@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-02 19:15:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-17 10:47:03
+ * @LastEditTime: 2025-08-05 12:41:00
  * @FilePath: \Mini_program_backend\app\service\cos.js
  * @Description:
  *
@@ -291,18 +291,20 @@ class CosService extends Service {
       }
       const fileName = path.basename(filePath); // 获取文件名
 
-      // 检查文件是否已经存在
-      const existingFile = await this.fileExists(avatarMD5);
-      if (existingFile) {
-        // 如果文件已存在，直接返回永久 URL
-        return {
-          avatarMD5: existingFile.md5,
-          avatarUrl: existingFile.avatarUrl,
-        };
-      }
-
       const md5 = await this.getFileMD5(filePath); // 获取文件的 MD5 值
       console.log("md5:", md5);
+
+      if (md5 === avatarMD5) {
+        // 检查文件是否已经存在
+        const existingFile = await this.fileExists(avatarMD5);
+        if (existingFile) {
+          // 如果文件已存在，直接返回永久 URL
+          return {
+            avatarMD5: existingFile.md5,
+            avatarUrl: existingFile.avatarUrl,
+          };
+        }
+      }
 
       const key = `WXavatar/${md5}-${fileName}`; // COS 文件存储路径，防止重名
 

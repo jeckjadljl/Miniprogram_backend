@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-10 11:07:34
+ * @LastEditTime: 2025-07-24 11:39:12
  * @FilePath: \Mini_program_backend\app\model\member_card.js
  * @Description:
  *
@@ -25,6 +25,7 @@ module.exports = app => {
       MemberCardRecord,
       Goods,
       MemberGoods,
+      MemberGoodsGroup,
     } = model;
     MemberCard.belongsToMany(User, {
       through: MemberCardRecord,
@@ -40,6 +41,10 @@ module.exports = app => {
       through: MemberGoods,
       foreignKey: "member_card_id",
       otherKey: "goods_id",
+    });
+    MemberCard.hasMany(MemberGoodsGroup, {
+      foreignKey: "uuid",
+      otherKey: "member_card_id",
     });
   };
 

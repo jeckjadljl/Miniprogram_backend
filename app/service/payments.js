@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-25 16:25:26
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-10 15:23:17
+ * @LastEditTime: 2025-08-08 17:37:08
  * @FilePath: \Mini_program_backend\app\service\payments.js
  * @Description:
  *
@@ -419,58 +419,59 @@ class PaymentsService extends Service {
         await User.cumulativeSpent(user_id, totalAmount);
         console.log(orders);
         // 检查是否有订单包含会员卡
-        const hasMemberCard = orders.some(order =>
-          order.orderitems.some(item => item.member_card_id)
-        );
-        if (hasMemberCard) {
-          this.ctx.logger.info("订单包含会员卡，跳过会员晋升逻辑");
-          // 会员卡固定返佣
-          await ctx.service.referral.distributeReferralReward({
-            user_id: order.user_id,
-            items: [], // 传入空数组表示会员卡返佣
-            membershipLevel: "member_card", // 特殊标识
-          });
-        } else {
-          console.log("订单不包含会员卡，继续执行");
-          // 将发放奖励的逻辑移到订单完成逻辑中执行
-          // // 非会员卡购买，执行会员晋升逻辑
-          // const result = await ctx.service.membership.checkAndUpgradeMembership(
-          //   order.user_id,
-          //   totalAmount
-          // );
+        // const hasMemberCard = orders.some(order =>
+        //   order.orderitems.some(item => item.member_card_id)
+        // );
+        // if (hasMemberCard) {
+        //   this.ctx.logger.info("订单包含会员卡，跳过会员晋升逻辑");
+        //   // 会员卡固定返佣
+        //   await ctx.service.referral.distributeReferralReward({
+        //     user_id: order.user_id,
+        //     items: [], // 传入空数组表示会员卡返佣
+        //     totalAmount,
+        //     membershipLevel: "member_card", // 特殊标识
+        //   });
+        // } else {
+        // console.log("订单不包含会员卡，继续执行");
+        // 将发放奖励的逻辑移到订单完成逻辑中执行
+        // // 非会员卡购买，执行会员晋升逻辑
+        // const result = await ctx.service.membership.checkAndUpgradeMembership(
+        //   order.user_id,
+        //   totalAmount
+        // );
 
-          // // 筛选运动装备商品项
-          // const allItems = [];
-          // for (const order of orders) {
-          //   for (const item of order.orderitems) {
-          //     // 获取商品类别信息
-          //     const goods = await ctx.service.goods.get({
-          //       goods_id: item.goods_id,
-          //       orgUuid: order.orgUuid,
-          //     });
+        // // 筛选运动装备商品项
+        // const allItems = [];
+        // for (const order of orders) {
+        //   for (const item of order.orderitems) {
+        //     // 获取商品类别信息
+        //     const goods = await ctx.service.goods.get({
+        //       goods_id: item.goods_id,
+        //       orgUuid: order.orgUuid,
+        //     });
 
-          //     // 添加空值检查
-          //     if (!goods) {
-          //       ctx.logger.warn(`未找到商品ID为 ${item.goods_id} 的商品信息`);
-          //       continue;
-          //     }
+        //     // 添加空值检查
+        //     if (!goods) {
+        //       ctx.logger.warn(`未找到商品ID为 ${item.goods_id} 的商品信息`);
+        //       continue;
+        //     }
 
-          //     allItems.push({
-          //       item,
-          //       order,
-          //       goods,
-          //     });
-          //   }
-          // }
+        //     allItems.push({
+        //       item,
+        //       order,
+        //       goods,
+        //     });
+        //   }
+        // }
 
-          // // 统一计算分佣
-          // await ctx.service.referral.distributeReferralReward({
-          //   user_id: order.user_id,
-          //   items: allItems,
-          //   totalSpent: result.totalSpent,
-          //   membershipLevel: result.memberLevel, // 根据实际情况传入会员等级
-          // });
-        }
+        // // 统一计算分佣
+        // await ctx.service.referral.distributeReferralReward({
+        //   user_id: order.user_id,
+        //   items: allItems,
+        //   totalSpent: result.totalSpent,
+        //   membershipLevel: result.memberLevel, // 根据实际情况传入会员等级
+        // });
+        // }
 
         // 处理每个订单
         for (const getorder of orders) {
@@ -500,6 +501,16 @@ class PaymentsService extends Service {
             this.ctx.logger.info(
               `用户${order.user_id}获得${memberCartData.card_name}会员卡`
             );
+
+            if (memberCartData.card_type === "black") {
+              await ctx.service.userWallet.updateBalance({
+                userId: order.user_id,
+                amount: memberCartData.salePrice,
+                txnType: "FROZEN",
+                orderId: getorder.uuid,
+                remark: `购买会员卡${memberCartData.card_name}, 资金${memberCartData.salePrice}暂不可使用`,
+              });
+            }
           }
 
           // 遍历订单商品项
@@ -772,6 +783,116 @@ class PaymentsService extends Service {
     }
   }
 
+  async deductionForBalance(params = {}) {
+    const { ctx, app } = this;
+    const { blance, orders } = params;
+
+    // 新增：计算总需要抵扣金额
+    const totalNeed = orders.ordersList.reduce(
+      (sum, order) => sum + parseFloat(order.payment_amount),
+      0
+    );
+    const totalAvailable =
+      parseFloat(blance.commission_amount) + parseFloat(blance.funds_amount);
+
+    if (totalAvailable < totalNeed) {
+      throw new Error("可用余额不足");
+    }
+
+    return await this.app.transaction(async transaction => {
+      let afterCommissionBlance;
+      let afterFundsBlance;
+      // 初始化可用余额
+      // let remainingCommission = parseFloat(blance.commission_amount);
+      // let remainingFunds = parseFloat(blance.funds_amount);
+
+      // if (blance.commission_amount > 0) {
+      //   afterCommissionBlance = await ctx.service.rewardsPool.updateBalance(
+      //     {
+      //       userId: orders.user_id,
+      //       amount: blance.commission_amount,
+      //       txnType: "CONSUME",
+      //       orderId: "",
+      //       remark: "订单抵扣",
+      //       description: `订单抵扣佣金${blance.commission_amount}`,
+      //     },
+      //     { transaction }
+      //   );
+      // }
+
+      // if (blance.funds_amount > 0) {
+      //   afterFundsBlance = await ctx.service.userWallet.updateBalance(
+      //     {
+      //       userId: orders.user_id,
+      //       amount: blance.funds_amount,
+      //       txnType: "CONSUME",
+      //       orderId: "",
+      //       remark: "订单抵扣",
+      //     },
+      //     { transaction }
+      //   );
+      // }
+
+      const result = await ctx.service.order.saveNew(orders, { transaction });
+
+      if (result) {
+        // 获取所有关联订单
+        const orderPromises = result.orderUuids.map(orderId =>
+          ctx.service.order.getOrderFromPayments({ uuid: orderId })
+        );
+        // 等待所有订单查询完成
+        const orderData = await Promise.all(orderPromises);
+        for (const order of orderData) {
+          // const orderAmount = parseFloat(order.payment_amount);
+
+          // // 动态分配抵扣金额（优先使用佣金）
+          // const commissionAmount = Math.min(remainingCommission, orderAmount);
+          // const fundsAmount = orderAmount - commissionAmount;
+
+          // // 实际扣除金额（处理浮点数精度）
+          // const actualCommission = parseFloat(commissionAmount.toFixed(2));
+          // const actualFunds = parseFloat(
+          //   Math.min(remainingFunds, fundsAmount).toFixed(2)
+          // );
+
+          // 更新订单状态
+          const modifyInfo = app.getModifyInfo(orders.user_id, orders.userName);
+          const modify = await ctx.model.Order.update(
+            {
+              order_status: "paid",
+              ...modifyInfo,
+            },
+            {
+              where: { uuid: order.uuid, user_id: orders.user_id },
+              transaction, // 传递事务
+            }
+          );
+
+          for (const item of order.orderitems) {
+            // 新增订单项状态更新 ▼▼▼
+            await ctx.model.OrderItem.update(
+              { status: "paid" },
+              {
+                where: { order_id: order.uuid, uuid: item.uuid },
+                transaction, // 使用相同事务
+              }
+            );
+
+            if (!modify) {
+              throw new Error(`订单修改失败: ${order.uuid}`);
+            }
+          }
+        }
+      }
+
+      return {
+        orderIds: result.orderUuids,
+        commission: afterCommissionBlance,
+        funds: afterFundsBlance,
+      };
+    });
+  }
+
   async refundPayments(params = {}) {
     const { out_trade_no, reason, amount } = params;
     const { notify_url } = this.config;
@@ -889,6 +1010,57 @@ class PaymentsService extends Service {
         地址: `${order.address.province} ${order.address.city} ${order.address.district} ${order.address.detail}`,
       },
     }));
+  }
+
+  /**
+   *
+   * 微信支付商家转账
+   */
+  async mchTransfer(params = {}) {
+    const { out_trade_no, reason, amount } = params;
+    const { notify_url, appId, transfer_scene_id } = this.config;
+    const url = "/v3/fund-app/mch-transfer/transfer-bills";
+    const method = "POST";
+
+    const out_bill_no = this.generateOutTradeNo();
+    const body = JSON.stringify({
+      out_bill_no,
+      transfer_scene_id,
+      appid: appId,
+      openid: params.payer.openid,
+      transfer_amount: Math.round(amount.total * 100), // 转为分
+      transfer_remark: reason,
+      notify_url: `${notify_url}/transfer`, // 使用独立的转账通知地址
+    });
+
+    // 获取签名和Authorization头
+    const wechatPayUtil = new WechatPayUtil(this.ctx);
+    const authData = await wechatPayUtil.getAuthorization(method, url, body);
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `WECHATPAY2-SHA256-RSA2048 mchid="${authData.mchid}",nonce_str="${authData.nonce_str}",signature="${authData.signature}",timestamp="${authData.timestamp}",serial_no="${authData.serial_no}"`,
+    };
+
+    try {
+      const response = await axios.post(
+        `https://api.mch.weixin.qq.com${url}`,
+        body,
+        { headers }
+      );
+
+      const responseData = response.data;
+      console.log("微信支付商家转账响应数据:", responseData);
+
+      // 检查是否成功获取 prepay_id
+      if (responseData) {
+        return responseData;
+      }
+      throw new Error("Failed to get prepay_id from WeChat Pay");
+    } catch (error) {
+      this.ctx.logger.error("微信支付请求失败:", error);
+      throw error;
+    }
   }
 
   /**

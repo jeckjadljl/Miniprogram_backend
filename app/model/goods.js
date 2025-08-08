@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-17 12:08:03
+ * @LastEditTime: 2025-08-07 16:23:54
  * @FilePath: \Mini_program_backend\app\model\goods.js
  * @Description:
  *
@@ -199,17 +199,24 @@ module.exports = app => {
    */
   Goods.get = async params => {
     const { goods_id, orgUuid } = params;
+    const where = { goods_id };
+    // 添加 orgUuid 条件
+    if (orgUuid !== null && orgUuid !== undefined) {
+      where.orgUuid = orgUuid;
+    }
+
     const images = await model.Posters.findAll({
-      where: { goods_id, orgUuid },
+      where,
     });
     const goodsInfo = await Goods.findOne({
-      where: { goods_id, orgUuid, status: "up" },
+      where: { ...where, status: "up" },
       include: [
         {
           model: model.GoodsSpecifications,
           attributes: [
             "spec_id",
             "goods_id",
+            "spec_color_id",
             "member_goods_id",
             "specName",
             "specValue",

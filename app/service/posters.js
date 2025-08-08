@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-22 22:02:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-12 00:23:53
+ * @LastEditTime: 2025-08-08 16:31:48
  * @FilePath: \Mini_program_backend\app\service\posters.js
  * @Description:
  *
@@ -166,6 +166,12 @@ class PostersService extends Service {
   async getHomeCarousel() {
     const { app } = this;
     const result = await app.model.Posters.getHomeCarousel();
+    return result;
+  }
+
+  async getweRunCarousel() {
+    const { app } = this;
+    const result = await app.model.Posters.getweRunCarousel();
     return result;
   }
 }

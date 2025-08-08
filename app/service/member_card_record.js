@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-17 10:25:34
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-27 17:53:48
+ * @LastEditTime: 2025-07-18 00:06:57
  * @FilePath: \Mini_program_backend\app\service\member_card_record.js
  * @Description:
  *
@@ -16,7 +16,7 @@ const fecha = require("fecha");
 class Member_card_recordService extends Service {
   async saveNew(params = {}) {
     const { app } = this;
-    const { user_id, membership_level } = params;
+    // const { user_id, membership_level } = params;
 
     const now = new Date();
     const endDate = new Date(now);
@@ -29,7 +29,7 @@ class Member_card_recordService extends Service {
       end_date: fecha.format(endDate, "YYYY-MM-DD HH:mm:ss"),
     };
 
-    await app.model.UserRoles.addMembershipRole(user_id, membership_level);
+    // await app.model.UserRoles.addMembershipRole(user_id, membership_level);
     const result = await app.model.MemberCardRecord.saveNew(cardData);
     return result;
   }
@@ -38,6 +38,16 @@ class Member_card_recordService extends Service {
     const { app } = this;
     const result = await app.model.MemberCardRecord.getAll(user_id);
     return result;
+  }
+
+  async getCardInfo(params = {}) {
+    const { app } = this;
+    return await app.model.MemberCardRecord.findOne({
+      where: {
+        member_card_id: params.member_card_id,
+      },
+      attributes: ["card_type", "salePrice"],
+    });
   }
 }
 

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-03-14 23:49:24
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-29 17:39:49
+ * @LastEditTime: 2025-07-19 16:56:40
  * @FilePath: \Mini_program_backend\app\service\points.js
  * @Description:
  *
@@ -82,6 +82,23 @@ class PointsService extends Service {
     console.log(Number(user.consumption_points), Number(requiredPoints));
 
     return Number(userPoints.toFixed(2)) >= Number(required.toFixed(2));
+  }
+
+  async getAllPointsRecords(params = {}) {
+    const { app } = this;
+    return await app.model.Points.getAllPointsRecords({
+      ...params,
+      PointsAttributes: [
+        "uuid",
+        "user_id",
+        "current_balance",
+        "points",
+        "type",
+        "source",
+        "description",
+        "createdTime",
+      ],
+    });
   }
 }
 

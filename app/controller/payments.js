@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-26 16:27:12
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-03 16:22:54
+ * @LastEditTime: 2025-07-21 11:06:52
  * @FilePath: \Mini_program_backend\app\controller\payments.js
  * @Description:
  *
@@ -69,6 +69,15 @@ class PaymentsController extends Controller {
   async paymentsOrderQuery() {
     const { ctx } = this;
     const result = await ctx.service.payments.paymentsOrderQuery(
+      ctx.request.body
+    );
+    this.success(result);
+  }
+
+  // 钱包余额抵用
+  async deductionForWalletBalance() {
+    const { ctx } = this;
+    const result = await ctx.service.payments.deductionForBalance(
       ctx.request.body
     );
     this.success(result);

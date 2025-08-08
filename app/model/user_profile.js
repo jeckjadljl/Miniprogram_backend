@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-05-18 11:58:01
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:09:48
+ * @LastEditTime: 2025-07-22 16:05:30
  * @FilePath: \Mini_program_backend\app\model\user_profile.js
  * @Description:
  *
@@ -28,7 +28,7 @@ module.exports = app => {
     return await UserProfile.create(params);
   };
 
-  UserProfile.sveModify = async params => {
+  UserProfile.saveModify = async params => {
     const { user_id } = params;
     return await UserProfile.update(params, {
       where: { user_id },

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-05-06 16:42:03
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-11 22:59:38
+ * @LastEditTime: 2025-07-19 16:39:24
  * @FilePath: \Mini_program_backend\app\service\rewards.js
  * @Description:
  *
@@ -79,7 +79,8 @@ class RewardsService extends Service {
           await this.addReviewReward(
             order.user_id,
             baseRewardFinal,
-            order.uuid
+            order.uuid,
+            "订单结算10%奖励"
           );
           this.ctx.logger.info(
             `用户${order.user_id}获得商品价格10%奖励健康币${baseRewardFinal}`
@@ -124,7 +125,7 @@ class RewardsService extends Service {
         user_id: order.user_id,
         points: pointAmount, // 使用负数进行扣减
         source: "order_deduction",
-        description: `订单 ${order.uuid} 健康币抵扣`,
+        description: "订单健康币抵扣",
       });
       this.ctx.logger.info(
         `用户${order.user_id}扣减${pointAmount}健康币，订单ID: ${order.uuid}`
@@ -139,14 +140,36 @@ class RewardsService extends Service {
   }
 
   // 新增奖励发放方法 ▼▼▼
-  async addReviewReward(user_id, points, orderId) {
+  async addReviewReward(user_id, points, orderId, description) {
     await this.ctx.service.points.saveNew({
       user_id,
       points,
       source: "review_reward",
-      description: `订单 ${orderId} 评价奖励`,
+      description: description || "订单评价奖励",
     });
-    this.ctx.logger.info(`用户${user_id}获得评价奖励健康币${points}`);
+    this.ctx.logger.info(
+      `用户${user_id}通过订单${orderId}获得评价奖励健康币${points}`
+    );
+  }
+
+  async getAllRewardsRecord(params = {}) {
+    const { app } = this;
+
+    return await app.model.Rewards.getAllRewardsRecords({
+      ...params,
+      RewardsAttributes: [
+        "id",
+        "user_id",
+        "txn_type",
+        "txn_no",
+        "order_id",
+        "amount",
+        "balance_after",
+        "remark",
+        "lastModifiedTime",
+        "createdTime",
+      ],
+    });
   }
 }
 

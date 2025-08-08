@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-21 16:39:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-11 22:45:05
+ * @LastEditTime: 2025-07-19 16:45:23
  * @FilePath: \Mini_program_backend\app\service\referral.js
  * @Description:
  *
@@ -104,6 +104,7 @@ class ReferralService extends Service {
           points: 50,
           source: "referral",
           source_id: user_id, // 新增被推荐人ID
+          description: "直属推荐奖励",
         },
         { transaction }
       );
@@ -119,6 +120,7 @@ class ReferralService extends Service {
             points: 5,
             source: "referral",
             source_id: user_id, // 新增被推荐人ID
+            description: "团队推荐奖励",
           },
           { transaction }
         );
@@ -132,7 +134,7 @@ class ReferralService extends Service {
     if (membershipLevel === "member_card") {
       const fixedReward = 9.9;
       await User.addBalance(user_id, fixedReward, { transaction });
-      await Rewards.createReward(
+      await ctx.service.rewardsPool.updateBalance(
         {
           userId: user_id,
           amount: fixedReward,
@@ -157,6 +159,25 @@ class ReferralService extends Service {
 
     // 遍历所有商品项计算佣金
     for (const { item, goods } of items) {
+      // ▼▼▼ 新增黑卡解冻逻辑 ▼▼▼
+      if (item.member_card_id) {
+        const cardInfo = await ctx.service.memberCardRecord.getCardInfo({
+          member_card_id: item.member_card_id,
+        });
+
+        if (cardInfo && cardInfo.card_type === "black") {
+          await ctx.service.userWallet.thawBalance({
+            userId: user_id,
+            orderId: item.order_id, // 需要确保订单项中有order_id字段
+            amount: item.salePrice, // 解冻金额应与冻结金额一致
+          });
+          this.logger.info(
+            `黑卡资金解冻成功，用户：${user_id} 金额：${item.salePrice}`
+          );
+        }
+      }
+      // ▲▲▲ 新增逻辑结束 ▲▲▲
+
       const { salePrice, payment_amount } = item;
       const st = payment_amount > 0 ? payment_amount : salePrice;
       const categoryName = goods?.goodsInfo.categoryName || "";
@@ -194,10 +215,12 @@ class ReferralService extends Service {
       await User.addBalance(directReferrerId, totalDirectReward, {
         transaction,
       });
-      await Rewards.createReward(
+      await ctx.service.rewardsPool.updateBalance(
         {
           userId: directReferrerId,
           amount: totalDirectReward,
+          txnType: "ORDER_REBATE",
+          remark: `直属推荐的奖励`,
           description: `直接推荐 ${user_id} 的奖励`,
         },
         { transaction }
@@ -211,10 +234,12 @@ class ReferralService extends Service {
     if (upperReferral && totalUpperReward > 0) {
       // 存入上级推荐佣金
       await User.addBalance(upperReferrerId, totalUpperReward, { transaction });
-      await Rewards.createReward(
+      await ctx.service.rewardsPool.updateBalance(
         {
           userId: upperReferrerId,
           amount: totalUpperReward,
+          txnType: "ORDER_REBATE",
+          remark: `团队推荐的奖励`,
           description: `间接推荐 ${user_id} 的奖励`,
         },
         { transaction }

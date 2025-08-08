@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 15:50:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-12 13:45:34
+ * @LastEditTime: 2025-07-15 11:38:00
  * @FilePath: \Mini_program_backend\app.js
  * @Description:
  *
@@ -12,6 +12,9 @@ require("dotenv").config();
 // const fecha = require("fecha");
 // const { v4: uuidv4 } = require("uuid");
 const md5 = require("md5");
+// 添加 redis 客户端
+const Redis = require("ioredis");
+const Redlock = require("redlock");
 // const fecha = require("fecha");
 // const { createBullBoard } = require("@bull-board/api");
 // const { BullMQAdapter } = require("@bull-board/api/bullMQAdapter");
@@ -41,35 +44,62 @@ class AppBootHook {
 
   async didLoad() {
     // 所有文件已加载，可以启动插件。
-    // 添加 redis 客户端
-    const Redis = require("ioredis");
-    const Redlock = require("redlock");
-
-    // 确保 Redis 配置存在
-    // if (!this.app.config.redis || !this.app.config.redis.client) {
-    //   this.app.logger.error("Redis configuration is missing");
-    //   throw new Error("Redis configuration is required");
-    // }
-
     // 初始化 redis 实例
     const redisConfig = this.app.config.redis.clients.default;
-    console.log("redis连接配置:", redisConfig);
-    console.log(
-      "开发环境:",
-      process.env.NODE_ENV === "production"
-        ? REDIS_HOST_PROD
-        : redisConfig.host || REDIS_HOST
+    const logger = this.app.logger;
+
+    // 根据环境区分配置
+    let redisClient;
+    if (process.env.NODE_ENV === "production") {
+      // 1. 创建哨兵模式的 Redis 客户端
+      redisClient = new Redis({
+        ...redisConfig,
+        // 哨兵模式下不能设置 host/port，而是通过 sentinels 配置
+        role: "master", // 强制连接主节点
+        sentinelRetryStrategy: times => Math.min(times * 100, 5000), // 哨兵专用重试策略
+        reconnectOnError: err => {
+          // 哨兵切换期间自动重连
+          const targetErrors = ["READONLY", "ETIMEDOUT", "ECONNRESET"];
+          if (targetErrors.some(e => err.message.includes(e))) {
+            logger.warn("Redis reconnect triggered:", err.message);
+            return 500; // 500ms后重连
+          }
+          return false;
+        },
+      });
+    } else {
+      redisClient = new Redis({
+        ...redisConfig,
+        // 覆盖开发环境默认配置
+        host: redisConfig.host || REDIS_HOST,
+        port: parseInt(redisConfig.port) || 6379,
+        retryStrategy: times => Math.min(times * 100, 3000),
+      });
+    }
+
+    // 2. 添加哨兵事件监听
+    redisClient.on("sentinel-reconnecting", params =>
+      logger.warn("[Redis] Sentinel reconnecting: %j", params)
     );
-    const redisClient = new Redis({
-      ...redisConfig,
-      // 覆盖开发环境默认配置
-      host:
-        process.env.NODE_ENV === "production"
-          ? REDIS_HOST_PROD
-          : redisConfig.host || REDIS_HOST,
-      port: parseInt(redisConfig.port) || 6379,
-      retryStrategy: times => Math.min(times * 100, 3000),
-    });
+
+    redisClient.on("sentinel-reconnected", params =>
+      logger.info("[Redis] Sentinel reconnected: %j", params)
+    );
+
+    redisClient.on("sentinel-master-changed", params =>
+      logger.warn("[Redis] Master changed to %s:%s", params.host, params.port)
+    );
+
+    // const redisClient = new Redis({
+    //   ...redisConfig,
+    //   // 覆盖开发环境默认配置
+    //   host:
+    //     process.env.NODE_ENV === "production"
+    //       ? REDIS_HOST_PROD
+    //       : redisConfig.host || REDIS_HOST,
+    //   port: parseInt(redisConfig.port) || 6379,
+    //   retryStrategy: times => Math.min(times * 100, 3000),
+    // });
     // const redisClient = new Redis({
     //   host: REDIS_HOST || REDIS_HOST_PROD,
     //   port: REDIS_PORT,
@@ -78,9 +108,16 @@ class AppBootHook {
     // });
 
     // 解决 ioredis v5+ 兼容性问题
-    redisClient.connect = redisClient.connect || (() => Promise.resolve());
+    // redisClient.connect = redisClient.connect || (() => Promise.resolve());
 
     // 创建 redlock 实例并挂载到 app 对象
+    // 3. 创建 Redlock 实例（使用所有Redis客户端）
+    // const clients = Object.values(this.app.redis || {});
+    // if (!clients.length) {
+    //   logger.error("No Redis clients available for Redlock");
+    //   clients.push(redisClient); // 回退到单个客户端
+    // }
+
     const redlock = new Redlock(
       [redisClient],
       {
@@ -89,47 +126,85 @@ class AppBootHook {
         retryCount: 10,
         retryDelay: 500,
         retryJitter: 500,
+        automaticExtensionThreshold: 500, // 生产环境推荐
       }
       // ...(this.app.config.redlock.options || {})
     );
     this.app.redlock = redlock;
 
     // 在 Redis 客户端初始化后添加
-    redisClient.on("connect", () =>
-      console.log("✅ Redis 已连接至:", redisClient.options.host)
-    );
-    redisClient.on("error", err =>
-      console.error("❌ Redis 连接失败:", err.message)
-    );
+    // redisClient.on("connect", () =>
+    //   console.log("✅ Redis 已连接至:", redisClient.options.host)
+    // );
+    // redisClient.on("error", err =>
+    //   console.error("❌ Redis 连接失败:", err.message)
+    // );
 
     // 正确的错误处理（应监听 redlock 实例）
+    // redlock.on("error", err => {
+    //   console.error("Redlock error:", err);
+    //   // 2. 使用错误名判断类型（4.2.0 没有 ResourceLockedError 导出）
+    //   if (err.name === "ResourceLockedError") {
+    //     this.app.logger.warn("[Redlock] Resource locked:", err.message);
+    //   } else {
+    //     this.app.logger.error("[Redlock] Critical error:", err);
+    //   }
+    // });
+
+    // // Redis 客户端基础错误处理
+    // redisClient.on("error", error => {
+    //   this.app.logger.error("[Redis] Connection error:", error);
+    // });
+
+    // 4. 添加Redlock事件监听
     redlock.on("error", err => {
-      console.error("Redlock error:", err);
-      // 2. 使用错误名判断类型（4.2.0 没有 ResourceLockedError 导出）
       if (err.name === "ResourceLockedError") {
-        this.app.logger.warn("[Redlock] Resource locked:", err.message);
+        logger.warn("[Redlock] Resource locked:", err.message);
       } else {
-        this.app.logger.error("[Redlock] Critical error:", err);
+        logger.error("[Redlock] Critical error:", err);
       }
     });
 
-    // Redis 客户端基础错误处理
-    redisClient.on("error", error => {
-      this.app.logger.error("[Redis] Connection error:", error);
-    });
+    // 5. 测试Redlock（生产环境应禁用）
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const lock = await redlock.acquire(["redlock-test"], 5000);
+        logger.info("✅ Redlock test: Lock acquired");
 
-    console.log("Redlock instance type:", redlock.constructor.name);
-    console.log("Lock method exists:", typeof redlock.lock === "function");
+        // 正确的解锁方式
+        await lock.unlock();
+        logger.info("✅ Redlock test: Lock released");
+      } catch (err) {
+        logger.error("❌ Redlock test failed:", err);
+      }
+    }
+    // console.log("Redlock instance type:", redlock.constructor.name);
+    // console.log("Lock method exists:", typeof redlock.lock === "function");
+
+    // // 3. 通用日志
+    // const log = this.app.logger;
+    // for (const [name, ins] of Object.entries(this.app.redis)) {
+    //   ins.on("connect", () => log.info(`✅ Redis[${name}] connected`));
+    //   ins.on("error", err => log.error(`❌ Redis[${name}] error:`, err));
+    // }
+
+    // redlock.on("error", err => {
+    //   if (err.name === "ResourceLockedError") {
+    //     log.warn("[Redlock] Resource locked:", err.message);
+    //   } else {
+    //     log.error("[Redlock] Critical error:", err);
+    //   }
+    // });
 
     // 测试代码 - 验证 Redlock 是否工作
-    try {
-      const lock = await redlock.acquire(["test-resource"], 1000);
-      this.app.logger.info("✅ Redlock test: Lock acquired");
-      await lock.release();
-      this.app.logger.info("✅ Redlock test: Lock released");
-    } catch (err) {
-      this.app.logger.error("❌ Redlock test failed:", err);
-    }
+    // try {
+    //   const lock = await redlock.acquire(["test-resource"], 1000);
+    //   this.app.logger.info("✅ Redlock test: Lock acquired");
+    //   await lock.unlock(); // 使用正确的解锁方法
+    //   this.app.logger.info("✅ Redlock test: Lock released");
+    // } catch (err) {
+    //   this.app.logger.error("❌ Redlock test failed:", err);
+    // }
   }
 
   async willReady() {

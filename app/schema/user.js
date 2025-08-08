@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-03-11 22:14:49
+ * @LastEditTime: 2025-07-27 15:41:18
  * @FilePath: \Mini_program_backend\app\schema\user.js
  * @Description:
  *
@@ -45,6 +45,7 @@ module.exports = app => {
     cumulative_spent: DECIMAL(10, 2), // 总购买金额（购买商城产品的总消费金额）
     consumption_points: DECIMAL(10, 2), // 消费积分
     balance: DECIMAL(10, 2), // 账户余额（会员积分）
+    real_name: STRING(10),
     birthday: {
       type: STRING(12),
       allowNull: true,

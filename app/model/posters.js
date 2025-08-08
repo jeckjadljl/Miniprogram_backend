@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-22 21:16:48
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-14 20:39:55
+ * @LastEditTime: 2025-08-08 16:31:09
  * @FilePath: \Mini_program_backend\app\model\posters.js
  * @Description:
  *
@@ -51,6 +51,15 @@ module.exports = app => {
     const carousel = await Posters.findAll({
       where: {
         purpose: "home",
+      },
+    });
+    return carousel;
+  };
+
+  Posters.getweRunCarousel = async () => {
+    const carousel = await Posters.findAll({
+      where: {
+        purpose: "weRun",
       },
     });
     return carousel;

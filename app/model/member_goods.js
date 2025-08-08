@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:34:52
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-24 17:44:27
+ * @LastEditTime: 2025-07-24 11:36:33
  * @FilePath: \Mini_program_backend\app\model\member_goods.js
  * @Description:
  *
@@ -25,6 +25,7 @@ module.exports = app => {
       Promotion,
       GoodsPromotion,
       Goods,
+      MemberGoodsGroup,
     } = model;
     MemberGoods.hasMany(OrderItem, { foreignKey: "member_goods_id" });
     MemberGoods.belongsToMany(Permissions, {
@@ -40,6 +41,10 @@ module.exports = app => {
     });
     MemberGoods.belongsTo(Goods, {
       foreignKey: "goods_id", // 这里应是 member_goods 表指向 goods 表的外键
+    });
+    MemberGoods.belongsTo(MemberGoodsGroup, {
+      foreignKey: "member_goods_group_id",
+      as: "member_goods_group",
     });
   };
 

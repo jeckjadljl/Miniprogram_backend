@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-01 11:51:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-01 16:51:46
+ * @LastEditTime: 2025-07-12 11:38:48
  * @FilePath: \Mini_program_backend\config\config.prod.js
  * @Description:
  *
@@ -31,6 +31,13 @@ module.exports = appInfo => {
     REDIS_PORT,
     REDIS_HOST_PROD,
     NODEJS_PORT,
+    REDIS_SENTINEL1_HOST,
+    REDIS_SENTINEL1_PORT,
+    REDIS_SENTINEL2_HOST,
+    REDIS_SENTINEL2_PORT,
+    REDIS_SENTINEL3_HOST,
+    REDIS_SENTINEL3_PORT,
+    REDIS_SENTINEL_MASTER_NAME,
   } = process.env;
 
   config.cluster = {
@@ -120,34 +127,50 @@ module.exports = appInfo => {
     },
   };
 
+  const sentinelBase = {
+    sentinels: [
+      { host: REDIS_SENTINEL1_HOST, port: Number(REDIS_SENTINEL1_PORT) },
+      { host: REDIS_SENTINEL2_HOST, port: Number(REDIS_SENTINEL2_PORT) },
+      { host: REDIS_SENTINEL3_HOST, port: Number(REDIS_SENTINEL3_PORT) },
+    ],
+    name: REDIS_SENTINEL_MASTER_NAME,
+    password: "",
+    role: "master", // 关键：强制只连接主节点
+    lazyConnect: true, // 启动时不阻塞
+
+    // 生产环境必需参数
+    connectTimeout: 10000, // 10秒连接超时
+    maxRetriesPerRequest: 3, // 每个请求最大重试次数
+    retryStrategy: times => Math.min(times * 100, 3000), // 重试策略
+    enableOfflineQueue: true, // 启用离线队列（比false更可靠）
+    showFriendlyErrorStack: false, // 生产环境关闭友好错误栈
+    sentinelRetryStrategy: times => Math.min(times * 100, 5000), // 哨兵专用重试策略
+  };
+
   config.redis = {
     clients: {
       default: {
         // 默认数据库，用于通用缓存
-        host: REDIS_HOST_PROD, // Redis host
-        port: REDIS_PORT, // Redis port
-        password: "",
+        ...sentinelBase,
         db: 0,
       },
       token: {
         // 登录 token 数据库
-        host: REDIS_HOST_PROD, // Redis host
-        port: REDIS_PORT, // Redis port
-        password: "",
+        ...sentinelBase,
         db: 1,
       },
       order: {
         // 订单单号数据库
-        host: REDIS_HOST_PROD, // Redis host
-        port: REDIS_PORT, // Redis port
-        password: "",
+        ...sentinelBase,
         db: 2,
       },
       subscribe: {
-        host: REDIS_HOST_PROD,
-        port: REDIS_PORT,
-        password: "",
+        ...sentinelBase,
         db: 3,
+      },
+      group: {
+        ...sentinelBase,
+        db: 4,
       },
     },
   };

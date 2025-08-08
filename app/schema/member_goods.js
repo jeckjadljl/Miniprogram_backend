@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-07 16:07:57
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-24 17:09:40
+ * @LastEditTime: 2025-08-06 11:12:03
  * @FilePath: \Mini_program_backend\app\schema\member_goods.js
  * @Description:
  *
@@ -23,6 +23,28 @@ module.exports = app => {
     member_card_id: {
       type: STRING(38),
       allowNull: true,
+    },
+    member_goods_group_id: {
+      type: STRING(38),
+      allowNull: true,
+      comment: "组合分组ID（相同ID的商品为一组）",
+    },
+    group_type: {
+      type: ENUM("single", "combo-item", "combo-group"),
+      allowNull: false,
+      defaultValue: "single",
+      comment:
+        "商品类型：single-独立商品 / combo-item-组合子项 / combo-group-组合父项",
+    },
+    min_select: {
+      type: INTEGER,
+      allowNull: true,
+      comment: "本组最少选择数量",
+    },
+    max_select: {
+      type: INTEGER,
+      allowNull: true,
+      comment: "本组最多选择数量",
     },
     member_card_name: {
       type: STRING(50),
