@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-25 18:19:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-04 01:40:46
+ * @LastEditTime: 2025-08-11 10:39:51
  * @FilePath: \Mini_program_backend\app\service\weRun\run_record.js
  * @Description:
  *
@@ -231,17 +231,32 @@ class Run_recordService extends Service {
 
     console.log("用户加入战队ID:", teamUuids);
     console.log("用户所属战队:", result);
+
+    // 修复查询条件构建
+    const whereCondition = {
+      status: "pending",
+      [app.Sequelize.Op.and]: [
+        { user_id: { [app.Sequelize.Op.ne]: user_id } }, // 使用ne替代notIn
+        teamUuids.length > 0
+          ? {
+              team_id: {
+                [app.Sequelize.Op.notIn]: teamUuids,
+              },
+            }
+          : {},
+      ],
+    };
     return app.model.WeRun.RunRecord.findAll({
-      where: {
-        status: "pending",
-        user_id: { [app.Sequelize.Op.notIn]: user_id },
-        // team_id: {
-        //   [app.Sequelize.Op.or]: [
-        //     { [app.Sequelize.Op.notIn]: teamUuids },
-        //     null,
-        //   ],
-        // }, // 排除自己战队的
-      },
+      where: whereCondition,
+      // where: {
+      //   status: "pending",
+      //   user_id: { [app.Sequelize.Op.notIn]: user_id },
+      //   // team_id: {
+      //   //   [app.Sequelize.Op.or]: [
+      //   //     { [app.Sequelize.Op.notIn]: teamUuids },
+      //   //     null,
+      //   //   ],
+      // }, // 排除自己战队的
       include: [
         {
           model: app.model.User,

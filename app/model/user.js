@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 15:39:20
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-05 00:43:58
+ * @LastEditTime: 2025-08-10 22:14:38
  * @FilePath: \Mini_program_backend\app\model\user.js
  * @Description:
  *
@@ -43,6 +43,7 @@ module.exports = app => {
     } = model;
     const { Team, TeamMembers, TeamActivity, TeamMembersActivity, RunRecord } =
       model.WeRun;
+    const { Comment } = model.Media;
     User.belongsToMany(Role, {
       through: UserRoles,
       foreignKey: "user_id",
@@ -101,6 +102,10 @@ module.exports = app => {
     User.hasMany(RunRecord, {
       foreignKey: "user_id",
       as: "run_records",
+    });
+    User.hasMany(Comment, {
+      foreignKey: "user_id",
+      as: "comment",
     });
   };
 

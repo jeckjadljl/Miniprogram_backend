@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-25 15:45:55
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-03 10:03:15
+ * @LastEditTime: 2025-08-11 15:05:32
  * @FilePath: \Mini_program_backend\app\schema\weRun\team_activity.js
  * @Description:
  *
@@ -65,11 +65,17 @@ module.exports = app => {
       type: DATE,
       allowNull: true,
       comment: "活动开始时间",
+      get() {
+        return this.getDataValue("start_time").toLocaleString("zh-CN");
+      },
     },
     end_time: {
       type: DATE,
       allowNull: true,
       comment: "活动结束时间",
+      get() {
+        return this.getDataValue("end_time").toLocaleString("zh-CN");
+      },
     },
     check_in_start_time: {
       type: DATE,

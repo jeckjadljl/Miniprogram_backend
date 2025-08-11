@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-06 11:54:12
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:36:06
+ * @LastEditTime: 2025-08-10 17:47:20
  * @FilePath: \Mini_program_backend\app\controller\posts.js
  * @Description:
  *
@@ -51,6 +51,34 @@ class PostsController extends Controller {
     } catch (error) {
       this.fail(error.message);
     }
+  }
+
+  async likePost() {
+    const { ctx } = this;
+    const params = ctx.request.body;
+    const result = await ctx.service.posts.likePost(params);
+    this.success(result);
+  }
+
+  async commentPost() {
+    const { ctx } = this;
+    const params = ctx.request.body;
+    const result = await ctx.service.posts.commentPost(params);
+    this.success(result);
+  }
+
+  async getCommentsByPostId() {
+    const { ctx } = this;
+    const params = ctx.request.body;
+    const result = await ctx.service.posts.getCommentsByPostId(params);
+    this.success(result);
+  }
+
+  async getPostInteractionStats() {
+    const { ctx } = this;
+    const params = ctx.request.body;
+    const result = await ctx.service.posts.getPostInteractionStats(params);
+    this.success(result);
   }
 }
 

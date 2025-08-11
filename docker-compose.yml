@@ -30,19 +30,106 @@ services:
     command: redis-server /usr/local/etc/redis/redis.conf  # 指定配置文件启动
 
   # Redis 从节点服务
-  redis-slave:
+  redis-slave1:
     image: redis
-    container_name: redis-slave
+    container_name: redis-slave1
     ports:
       - "${REDIS_SLAVE_DOCKER_PORT:-6380}:6379"
     volumes:
-      - redis_slave_data:/data  # 添加持久化数据卷
-      - ./redis-config/redis-slave.conf:/usr/local/etc/redis/redis.conf  # 新增配置文件挂载
+      - redis_slave_data1:/data  # 添加持久化数据卷
+      - ./redis-config/redis-slave1.conf:/usr/local/etc/redis/redis.conf  # 新增配置文件挂载
     networks:
       - miniprogram-network
     command: redis-server /usr/local/etc/redis/redis.conf  # 指定配置文件启动
     depends_on:
       - redis-master
+      
+  redis-slave2:
+    image: redis
+    container_name: redis-slave2
+    ports:
+      - "${REDIS_SLAVE_DOCKER_PORT:-6381}:6379"
+    volumes:
+      - redis_slave_data2:/data  # 添加持久化数据卷
+      - ./redis-config/redis-slave2.conf:/usr/local/etc/redis/redis.conf  # 新增配置文件挂载
+    networks:
+      - miniprogram-network
+    command: redis-server /usr/local/etc/redis/redis.conf  # 指定配置文件启动
+    depends_on:
+      - redis-master
+      
+  # Sentinel 节点 (至少3个)
+  sentinel1:
+    image: redis
+    container_name: sentinel1
+    ports:
+      - 26379:26379
+    command: >
+      sh -c '
+        echo "⏳ waiting for redis-master:6379 ..."
+        until redis-cli -h redis-master -p 6379 ping >/dev/null 2>&1; do
+          sleep 1
+        done
+        echo "✅ redis-master ready, starting sentinel ..."
+        redis-sentinel /etc/redis/sentinel.conf
+      '
+    volumes:
+      - sentinel1-data:/data
+      - ./redis-config/sentinel1.conf:/etc/redis/sentinel.conf
+    networks:
+      - miniprogram-network
+    depends_on:
+      - redis-master
+      - redis-slave1
+      - redis-slave2
+
+  sentinel2:
+    image: redis
+    container_name: sentinel2
+    ports:
+      - 26380:26379
+    command: >
+      sh -c '
+        echo "⏳ waiting for redis-master:6379 ..."
+        until redis-cli -h redis-master -p 6379 ping >/dev/null 2>&1; do
+          sleep 1
+        done
+        echo "✅ redis-master ready, starting sentinel ..."
+        redis-sentinel /etc/redis/sentinel.conf
+      '
+    volumes:
+      - sentinel2-data:/data
+      - ./redis-config/sentinel2.conf:/etc/redis/sentinel.conf
+    networks:
+      - miniprogram-network
+    depends_on:  # 缺少依赖声明
+      - redis-master
+      - redis-slave1
+      - redis-slave2
+
+  sentinel3:
+    image: redis
+    container_name: sentinel3
+    ports:
+      - 26381:26379
+    command: >
+      sh -c '
+        echo "⏳ waiting for redis-master:6379 ..."
+        until redis-cli -h redis-master -p 6379 ping >/dev/null 2>&1; do
+          sleep 1
+        done
+        echo "✅ redis-master ready, starting sentinel ..."
+        redis-sentinel /etc/redis/sentinel.conf
+      '
+    volumes:
+      - sentinel3-data:/data
+      - ./redis-config/sentinel3.conf:/etc/redis/sentinel.conf
+    networks:
+      - miniprogram-network
+    depends_on:  # 缺少依赖声明
+      - redis-master
+      - redis-slave1
+      - redis-slave2
 
   # Node.js 应用服务
   miniprogram_backend:
@@ -53,7 +140,7 @@ services:
       - "${NODEJS_PORT:-7001}:7001"
     depends_on:
       - mysql
-      - redis-master
+      - sentinel1
     volumes:
       # 添加证书挂载
       - /www/wwwroot/cert:/usr/src/app/cert  # 宿主机:容器内
@@ -76,7 +163,9 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     command: >
       sh -c "
-        dockerize -wait tcp://redis-master:6379 -timeout 60s
+        dockerize -wait tcp://sentinel1:26379 -timeout 20s
+        dockerize -wait tcp://sentinel2:26379 -timeout 20s
+        dockerize -wait tcp://sentinel3:26379 -timeout 20s
         dockerize -wait tcp://mysql:3306 -timeout 60s
         # 检查特定迁移是否已执行
         if ! npx sequelize-cli db:migrate:status --env prod | grep '20241107073749-init-all-tables.js' | grep -q 'up'; then
@@ -93,8 +182,9 @@ networks:
     
 volumes:  # 声明持久化卷
   mysql_data:
-    driver: local
   redis_master_data:
-    driver: local
-  redis_slave_data:
-    driver: local
+  redis_slave_data1:  # 修正卷名
+  redis_slave_data2:  # 修正卷名
+  sentinel1-data:
+  sentinel2-data:
+  sentinel3-data:

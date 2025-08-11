@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-05-18 11:58:01
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 21:55:47
+ * @LastEditTime: 2025-08-10 22:16:58
  * @FilePath: \Mini_program_backend\app\model\posts.js
  * @Description:
  *
@@ -19,8 +19,13 @@ module.exports = app => {
 
   Posts.associate = function () {
     const { User } = model;
+    const { Comment } = model.Media;
     Posts.belongsTo(User, {
       foreignKey: "user_id",
+    });
+    Posts.hasMany(Comment, {
+      foreignKey: "post_id",
+      as: "comment",
     });
   };
 

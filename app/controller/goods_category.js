@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-12-08 17:42:28
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-02-13 21:42:40
+ * @LastEditTime: 2025-08-09 15:10:25
  * @FilePath: \Mini_program_backend\app\controller\goods_category.js
  * @Description:
  *
@@ -105,6 +105,12 @@ class GoodsCategoryController extends Controller {
   async getAll() {
     const { ctx } = this;
     const goodsCategory = await ctx.service.goodsCategory.getAll();
+    this.success(goodsCategory);
+  }
+
+  async getGrocery() {
+    const { ctx } = this;
+    const goodsCategory = await ctx.service.goodsCategory.getGrocery();
     this.success(goodsCategory);
   }
 }

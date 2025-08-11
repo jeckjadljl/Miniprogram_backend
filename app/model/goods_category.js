@@ -130,5 +130,18 @@ module.exports = app => {
     return await GoodsCategory.findAll({ attributes, where: { status: "up" } });
   };
 
+  GoodsCategory.getGrocery = async ({ attributes }) => {
+    const grocery = await model.GoodsCategory.findAll({
+      where: { elements_id: null, status: "up" },
+      attributes,
+      order: [
+        // 对 GoodsCategory 的 sort_order 字段进行排序
+        ["sort_order", "ASC"],
+      ],
+    });
+
+    return grocery;
+  };
+
   return GoodsCategory;
 };

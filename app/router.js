@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 17:44:22
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-08 16:47:28
+ * @LastEditTime: 2025-08-10 17:49:22
  * @FilePath: \Mini_program_backend\app\router.js
  * @Description:
  *
@@ -77,6 +77,7 @@ module.exports = app => {
   router.post("/login/test", login.testlogin);
   router.post("/login/getOpenId", login.getOpenId);
   router.post("/login/refreshLoginStatus", login.refreshLoginStatue);
+  router.post("/user/getUserByOpenId", user.getUser);
 
   // 上传用户头像
   router.post("/user/uploadAvatar", user.uploadAvatar);
@@ -119,6 +120,8 @@ module.exports = app => {
 
   // 商品类别
   router.get("/goodsCategory/getAll", goodsCategory.getAll);
+  // 获取满满供销社的类别
+  router.get("/goodsCategory/getGrocery", goodsCategory.getGrocery);
 
   // 订单操作
   router.post("/order/queryOrderBill", order.queryOrderBill);
@@ -286,6 +289,10 @@ module.exports = app => {
   router.post("/group/getGroupById", groups.getGroupById);
   router.post("/group/getGroupByOrderId", groups.getGroupByOrderId);
 
+  /**
+   * 满豆好聊
+   */
+
   // 满豆分享（生活号）
   router.post("/userProfile/getUserProfile", userProfile.getOrCreateProfile);
 
@@ -295,6 +302,12 @@ module.exports = app => {
   router.post("/posts/waterfull", posts.getWaterfullPostsList);
   router.post("/posts/videoFeed", posts.getVideoFeedList);
   router.post("/posts/saveModify", posts.saveModify);
+
+  // 点赞，评论，关注
+  router.post("/posts/likePost", posts.likePost);
+  router.post("/posts/commentPost", posts.commentPost);
+  router.post("/posts/getCommentsByPostId", posts.getCommentsByPostId);
+  router.post("/posts/getPostInteractionStats", posts.getPostInteractionStats);
 
   /**
    * 战队打卡

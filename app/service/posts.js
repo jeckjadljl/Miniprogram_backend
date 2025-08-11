@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-05 17:18:37
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-07-09 22:05:32
+ * @LastEditTime: 2025-08-10 22:44:36
  * @FilePath: \Mini_program_backend\app\service\posts.js
  * @Description:
  *
@@ -226,6 +226,146 @@ class PostsService extends Service {
       ctx.logger.error("帖子修改失败:", e);
       return null;
     }
+  }
+
+  // 点赞/取消点赞功能
+  async likePost(params = {}) {
+    const { app, ctx } = this;
+    const { user_id, post_id, user_name, avatar } = params;
+
+    // 检查是否已点赞
+    const existingLike = await app.model.Media.Like.findOne({
+      where: { user_id, post_id },
+    });
+
+    // 获取帖子信息
+    const post = await app.model.Posts.findByPk(post_id);
+    if (!post) {
+      ctx.throw(404, "帖子不存在");
+    }
+
+    // 如果是点赞操作且帖子作者不是当前用户，则触发点赞事件
+    if (!existingLike && post.user_id !== user_id) {
+      // 获取当前用户信息
+      const user = await app.model.User.findByPk(user_id, {
+        attributes: ["uuid", "user_name", "avatar"],
+      });
+
+      // 触发点赞事件
+      app.emit("like", {
+        user_id,
+        post_id,
+        post_author_id: post.user_id,
+        user_info: user,
+        timestamp: new Date(),
+      });
+    }
+
+    if (existingLike) {
+      // 取消点赞
+      await existingLike.destroy();
+      await app.model.Posts.decrement("likes", { where: { uuid: post_id } });
+      return { liked: false };
+    }
+    // 创建点赞记录
+    await app.model.Media.Like.create({ user_id, post_id, user_name, avatar });
+    await app.model.Posts.increment("likes", { where: { uuid: post_id } });
+    return { liked: true };
+  }
+
+  async commentPost(params = {}) {
+    const { app, ctx } = this;
+    const { user_id, post_id, content, user_name, avatar } = params;
+
+    // 获取帖子信息
+    const post = await app.model.Posts.findByPk(post_id);
+    if (!post) {
+      ctx.throw(404, "帖子不存在");
+    }
+
+    // 创建评论
+    const comment = await app.model.Media.Comment.create({
+      user_id,
+      post_id,
+      user_name,
+      avatar,
+      content,
+    });
+
+    // 更新帖子评论数
+    await app.model.Posts.increment("comments", { where: { uuid: post_id } });
+
+    // 如果评论者不是帖子作者，则触发评论事件
+    if (post.user_id !== user_id) {
+      // 获取当前用户信息
+      const user = await app.model.User.findByPk(user_id, {
+        attributes: ["uuid", "user_name", "avatar"],
+      });
+
+      // 触发评论事件
+      app.emit("comment", {
+        user_id,
+        post_id,
+        comment_id: comment.uuid,
+        post_author_id: post.user_id,
+        content,
+        user_info: user,
+        timestamp: new Date(),
+      });
+    }
+
+    return comment;
+  }
+
+  async getCommentsByPostId(params = {}) {
+    const { app, ctx } = this;
+    const { post_id } = params;
+
+    if (!post_id) {
+      ctx.throw(400, "帖子ID不能为空");
+    }
+
+    // 验证帖子存在性
+    const postExists = await app.model.Posts.findByPk(post_id);
+    if (!postExists) {
+      ctx.throw(404, "帖子不存在");
+    }
+
+    // 获取分页评论
+    const result = await app.model.Media.Comment.getCommentsByPostId({
+      ...params,
+    });
+
+    return result;
+  }
+
+  /**
+   * 获取帖子的点赞和评论数量统计
+   * @param {Object} params - 查询参数
+   * @returns {Promise<Object>} 包含点赞数和评论数的对象
+   */
+  async getPostInteractionStats(params = {}) {
+    const { app, ctx } = this;
+    const { post_id } = params;
+
+    // 验证参数
+    if (!post_id) {
+      ctx.throw(400, "帖子ID不能为空");
+    }
+
+    // 查询帖子统计信息
+    const post = await app.model.Posts.findByPk(post_id, {
+      attributes: ["likes", "comments"],
+    });
+
+    if (!post) {
+      ctx.throw(404, "帖子不存在");
+    }
+
+    return {
+      likeCount: post.likes || 0,
+      commentCount: post.comments || 0,
+    };
   }
 }
 

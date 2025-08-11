@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-24 16:34:32
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-20 21:01:10
+ * @LastEditTime: 2025-08-09 12:10:11
  * @FilePath: \Mini_program_backend\app\model\promotion.js
  * @Description:
  *

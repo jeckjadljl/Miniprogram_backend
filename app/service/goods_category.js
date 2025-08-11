@@ -117,6 +117,14 @@ class GoodsCategoryService extends Service {
       ],
     });
   }
+
+  async getGrocery(params = {}) {
+    const { app } = this;
+    return await app.model.GoodsCategory.getGrocery({
+      ...params,
+      attributes: ["uuid", "name", "status", "sort_order"],
+    });
+  }
 }
 
 module.exports = GoodsCategoryService;
