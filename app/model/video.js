@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-04-22 23:32:34
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-06-17 11:16:48
+ * @LastEditTime: 2025-08-12 16:17:19
  * @FilePath: \Mini_program_backend\app\model\video.js
  * @Description:
  *
@@ -48,6 +48,7 @@ module.exports = app => {
           ],
       where: {
         elements_id,
+        status: "active",
         uuid: { [Op.notIn]: excludeIds }, // 排除已获取视频
       },
     };

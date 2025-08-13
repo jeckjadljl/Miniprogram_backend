@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 16:56:10
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-08 23:10:00
+ * @LastEditTime: 2025-08-13 15:29:09
  * @FilePath: \Mini_program_backend\app\controller\login.js
  * @Description:
  *
@@ -66,8 +66,8 @@ class LoginController extends Controller {
 
   async refreshLoginStatue() {
     const { ctx } = this;
-    const { code, userInfo } = ctx.request.body;
-    if (!code || !userInfo) {
+    const { code } = ctx.request.body;
+    if (!code) {
       ctx.throw(400, "缺少必要参数");
     }
 

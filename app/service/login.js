@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 18:15:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-08 23:09:17
+ * @LastEditTime: 2025-08-13 15:11:47
  * @FilePath: \Mini_program_backend\app\service\login.js
  * @Description:
  *
@@ -361,11 +361,19 @@ class LoginService extends Service {
             3 * 24 * 60 * 60,
             "token"
           ); // 设置3天有效期
+
+          const UserData = {
+            uuid: user.uuid,
+            avatarUrl: user.avatar,
+            nickName: user.user_name,
+          };
+
           return {
             token: token.token,
             uuid: user.uuid,
             session_key,
             type: "refresh",
+            user: UserData,
           };
         }
         throw new Error("用户不存在");
@@ -377,11 +385,18 @@ class LoginService extends Service {
           3 * 24 * 60 * 60,
           "token"
         ); // 设置3天有效期
+
+        const userData = {
+          uuid,
+          nickName,
+          avatarUrl,
+        };
         return {
           token: token.token,
           uuid,
           session_key,
           type: "refresh",
+          user: userData,
         };
       }
     } catch (error) {
