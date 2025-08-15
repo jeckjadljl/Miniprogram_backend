@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-26 14:54:39
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-04 18:01:30
+ * @LastEditTime: 2025-08-15 13:54:36
  * @FilePath: \Mini_program_backend\app\service\weRun\team_activity.js
  * @Description:
  *
@@ -27,12 +27,16 @@ class Team_activityService extends Service {
   async createActivity(params) {
     const { app } = this;
     const { user_id, userName, activity } = params;
+    const { team_id } = activity;
 
-    // 验证用户是否为战队队长
-    // const team = await app.model.WeRun.Team.findOne({
-    //   where: { uuid: team_id, captain: user_id },
-    // });
-    // if (!team) throw new Error("无权限创建活动或战队不存在");
+    const team = await app.model.WeRun.Team.findOne({
+      where: { uuid: team_id },
+    });
+    if (team) {
+      team.update({
+        activityCount: team.activityCount + 1,
+      });
+    }
 
     return app.model.WeRun.TeamActivity.saveNew({
       ...activity,

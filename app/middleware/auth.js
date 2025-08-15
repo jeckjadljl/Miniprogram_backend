@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-03 11:54:16
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-13 15:44:23
+ * @LastEditTime: 2025-08-14 21:19:44
  * @FilePath: \Mini_program_backend\app\middleware\auth.js
  * @Description:
  *
@@ -134,6 +134,7 @@ module.exports = options => {
       "/memberGoodsPackage/saveNew",
       "/memberGoodsPackageItem/saveNew",
       "/memberGoodsPackage/getPackageByCardId",
+      "/goodsCategory/getGrocery",
     ];
     if (exemptRoutes.includes(ctx.path)) {
       await next();

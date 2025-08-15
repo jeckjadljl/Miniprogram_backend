@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-21 16:56:10
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-13 15:29:09
+ * @LastEditTime: 2025-08-15 11:19:03
  * @FilePath: \Mini_program_backend\app\controller\login.js
  * @Description:
  *
@@ -77,9 +77,14 @@ class LoginController extends Controller {
         ctx.request.body
       );
       this.success(result);
-    } catch (error) {
-      ctx.logger.error("刷新登录状态接口错误:", error);
-      this.fail(ctx.ERROR_CODE, error);
+    } catch (err) {
+      const { fields = {}, name, message } = err;
+      ctx.logger.error("刷新登录状态接口错误:", err);
+
+      if (name === "unExistsError") {
+        this.fail(ctx.NOT_FOUND_CODE, message);
+      }
+      this.fail(ctx.ERROR_CODE, err);
     }
   }
 }

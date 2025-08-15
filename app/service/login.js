@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-10-16 18:15:54
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-13 15:11:47
+ * @LastEditTime: 2025-08-15 11:18:02
  * @FilePath: \Mini_program_backend\app\service\login.js
  * @Description:
  *
@@ -376,7 +376,9 @@ class LoginService extends Service {
             user: UserData,
           };
         }
-        throw new Error("用户不存在");
+        const error = new Error("用户不存在");
+        error.name = "unExistsError"; // 用户名错误
+        throw error;
       } else {
         const token = await ctx.service.jwt.generateToken(uuid);
         await ctx.service.redis.set(

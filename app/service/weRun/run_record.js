@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-25 18:19:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-11 10:39:51
+ * @LastEditTime: 2025-08-15 12:00:10
  * @FilePath: \Mini_program_backend\app\service\weRun\run_record.js
  * @Description:
  *
@@ -239,15 +239,25 @@ class Run_recordService extends Service {
         { user_id: { [app.Sequelize.Op.ne]: user_id } }, // 使用ne替代notIn
         teamUuids.length > 0
           ? {
-              team_id: {
-                [app.Sequelize.Op.notIn]: teamUuids,
-              },
+              [app.Sequelize.Op.or]: [
+                { team_id: { [app.Sequelize.Op.or]: [null, ""] } },
+                { team_id: { [app.Sequelize.Op.notIn]: teamUuids } },
+              ],
             }
-          : {},
+          : {}, // 无战队用户时不过滤team_id
+        // teamUuids.length > 0
+        //   ? {
+        //       team_id: {
+        //         [app.Sequelize.Op.or]: [null, ""],
+        //         [app.Sequelize.Op.notIn]: teamUuids,
+        //       },
+        //     }
+        //   : {},
       ],
     };
     return app.model.WeRun.RunRecord.findAll({
       where: whereCondition,
+      order: [["createdTime", "DESC"]], // 新增排序条件
       // where: {
       //   status: "pending",
       //   user_id: { [app.Sequelize.Op.notIn]: user_id },
