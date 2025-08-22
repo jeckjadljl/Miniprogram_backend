@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:27:25
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-21 10:01:59
+ * @LastEditTime: 2025-08-19 16:32:54
  * @FilePath: \Mini_program_backend\app\model\cart.js
  * @Description:
  *
@@ -108,6 +108,7 @@ module.exports = app => {
         "specImages",
         "specPosters",
         "isDefault",
+        "sort_order",
       ],
       goodsSpecColorAttributes: [
         "uuid",
@@ -118,6 +119,7 @@ module.exports = app => {
         "specPrice",
         "specColorThumbnail",
         "specColorImages",
+        "sort_order",
       ],
       memberGoodsAttributes: [
         "id",
@@ -150,6 +152,7 @@ module.exports = app => {
       ],
       raw: true,
       nest: true,
+      order: [["sort_order", "ASC"]],
     });
 
     // 合并结果并按时间排序
@@ -216,6 +219,13 @@ module.exports = app => {
   // 清空购物车
   Cart.clearCart = async userId => {
     return await Cart.destroy({
+      where: { user_id: userId },
+    });
+  };
+
+  // 在Cart模型中添加
+  Cart.getCartItemCount = async userId => {
+    return await Cart.count({
       where: { user_id: userId },
     });
   };

@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-13 16:09:31
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-10 16:32:57
+ * @LastEditTime: 2025-08-18 16:55:54
  * @FilePath: \Mini_program_backend\app\service\cart.js
  * @Description:
  *
@@ -122,6 +122,22 @@ class CartService extends Service {
   async clearCart(userId) {
     const { Cart } = this.ctx.model;
     await Cart.clearCart(userId);
+  }
+
+  async getTotalCartItemCount(userId) {
+    const { Cart, MemberCart } = this.ctx.model;
+
+    // 获取普通购物车数量
+    const normalCount = await Cart.getCartItemCount(userId);
+
+    // 获取会员购物车数量
+    const memberCount = await MemberCart.getCartItemCount(userId);
+
+    return {
+      normal: normalCount,
+      member: memberCount,
+      total: normalCount + memberCount,
+    };
   }
 }
 

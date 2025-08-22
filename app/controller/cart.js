@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-14 17:11:45
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-10 16:19:30
+ * @LastEditTime: 2025-08-18 16:58:26
  * @FilePath: \Mini_program_backend\app\controller\cart.js
  * @Description:
  *
@@ -79,6 +79,13 @@ class CartController extends Controller {
     const { userId } = ctx.request.body;
     const goodslist = await ctx.service.cart.clearCart(userId);
     this.success(goodslist);
+  }
+
+  async getTotalCartItemCount() {
+    const { ctx } = this;
+    const { userId } = ctx.request.body;
+    const totalCount = await ctx.service.cart.getTotalCartItemCount(userId);
+    this.success(totalCount);
   }
 }
 

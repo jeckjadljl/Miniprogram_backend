@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-25 16:09:37
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-08 16:28:55
+ * @LastEditTime: 2025-08-22 11:11:04
  * @FilePath: \Mini_program_backend\app\service\weRun\team.js
  * @Description:
  *
@@ -167,7 +167,7 @@ class TeamService extends Service {
         ],
       ],
       where: {
-        date: { [app.model.Sequelize.Op.gte]: startTime },
+        // date: { [app.model.Sequelize.Op.gte]: startTime },
         status: "approved",
       },
       include: [
@@ -187,22 +187,55 @@ class TeamService extends Service {
 
   async getTeamInfo(team_id) {
     const { app } = this;
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return app.model.WeRun.Team.findOne({
+    const now = new Date();
+    const startTime = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const team = await app.model.WeRun.Team.findOne({
       where: { uuid: team_id },
       include: [
         {
           model: app.model.User,
           as: "users",
-          attributes: ["uuid", "user_name", "avatar", "real_name"],
+          attributes: [
+            "uuid",
+            "user_name",
+            "avatar",
+            "real_name",
+            // 新增统计字段
+            [
+              app.model.literal(`(
+              SELECT COALESCE(SUM(distance), 0) 
+              FROM run_record 
+              WHERE user_id = users.uuid 
+                AND date >= '${startTime.toISOString()}'
+                AND status = 'approved'
+            )`),
+              "today_distance",
+            ],
+            [
+              app.model.literal(`(
+              SELECT COUNT(DISTINCT DATE(date)) 
+              FROM run_record 
+              WHERE user_id = users.uuid 
+                AND status = 'approved'
+            )`),
+              "total_days",
+            ],
+          ],
+          through: { attributes: [] },
         },
         {
           model: app.model.WeRun.TeamActivity,
           as: "team_activities",
-          where: { start_time: { [app.model.Sequelize.Op.gte]: sevenDaysAgo } },
+          // where: { start_time: { [app.model.Sequelize.Op.gte]: sevenDaysAgo } },
         },
       ],
     });
+
+    return team;
   }
 
   async joinTeam(params = {}) {

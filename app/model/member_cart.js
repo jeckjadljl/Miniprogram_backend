@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2024-11-04 11:27:25
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-05-21 10:01:19
+ * @LastEditTime: 2025-08-18 16:56:52
  * @FilePath: \Mini_program_backend\app\model\member_cart.js
  * @Description:
  *
@@ -148,6 +148,12 @@ module.exports = app => {
           ],
         },
       ],
+    });
+  };
+
+  MemberCart.getCartItemCount = async userId => {
+    return await MemberCart.count({
+      where: { user_id: userId },
     });
   };
 

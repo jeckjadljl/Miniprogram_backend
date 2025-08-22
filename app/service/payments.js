@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-02-25 16:25:26
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-08 17:37:08
+ * @LastEditTime: 2025-08-18 10:27:07
  * @FilePath: \Mini_program_backend\app\service\payments.js
  * @Description:
  *
@@ -998,7 +998,8 @@ class PaymentsService extends Service {
 
     return orders.filter(Boolean).map(order => ({
       orderId: order.uuid,
-      items: order.orderitems.map(item => ({
+      商品信息: order.orderitems.map(item => ({
+        orderItemId: item.uuid,
         名称: item.name,
         规格: item.spec,
         价格: item.payment_amount,

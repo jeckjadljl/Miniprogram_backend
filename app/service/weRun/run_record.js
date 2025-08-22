@@ -2,7 +2,7 @@
  * @Author: caohanzhong 342292451@qq.com
  * @Date: 2025-07-25 18:19:19
  * @LastEditors: caohanzhong 342292451@qq.com
- * @LastEditTime: 2025-08-15 12:00:10
+ * @LastEditTime: 2025-08-22 10:12:05
  * @FilePath: \Mini_program_backend\app\service\weRun\run_record.js
  * @Description:
  *
@@ -20,7 +20,13 @@ class Run_recordService extends Service {
     const { user_id, userName, records } = params;
     const crateInfo = app.getCrateInfo(user_id, userName);
 
-    console.log("submitRunRecord records.screenshot:", records.screenshot);
+    // 新增：检查打卡时间（5:00-22:00）
+    const now = new Date();
+    const currentHour = now.getHours();
+    if (currentHour < 5 || currentHour >= 22) {
+      throw new Error("每日有效打卡时间为05:00-22:00，当前时间不可打卡");
+    }
+
     // 新增：检查当日是否已存在记录
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
